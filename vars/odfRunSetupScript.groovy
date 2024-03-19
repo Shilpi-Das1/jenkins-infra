@@ -26,7 +26,7 @@ def call(){
                [ ! -z "$UPGRADE_OCS_REGISTRY" ] && echo "export UPGRADE_OCS_REGISTRY=${UPGRADE_OCS_REGISTRY}" >> env_vars.sh
                [ ! -z "$OCS_REGISTRY_IMAGE" ] && echo "export OCS_REGISTRY_IMAGE=${OCS_REGISTRY_IMAGE}" >> env_vars.sh
                [ ! -z "$RERUN_TIER_TEST" ] && echo "export RERUN_TIER_TEST=${RERUN_TIER_TEST}" >> env_vars.sh
-               if [ "${ODF_VERSION}" = "4.15" || [ "${ODF_VERSION}" = "4.16" ]; then
+               if [ "${ODF_VERSION}" = "4.15" ] || [ "${ODF_VERSION}" = "4.16" ]; then
                    git clone https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                elif [ "${ODF_VERSION}" = "4.14" ] || [ "${ODF_VERSION}" = "4.13" ] ; then
                    git clone -b v"${ODF_VERSION}".0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
