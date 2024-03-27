@@ -2,8 +2,10 @@
 
 pipeline {
     agent {
-        kubernetes {
-            inheritFrom 'jenkins-agent'
+        docker {
+            image 'quay.io/powercloud/inbound-agent:4.13.3-1.1'
+            args '-v /etc/resolv.conf:/etc/resolv.conf'
+            label 'jump-vpc-x86_64'
         }
     }
     environment {
