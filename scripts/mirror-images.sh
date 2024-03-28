@@ -20,9 +20,14 @@ for annotation in $(./oc get is release-ppc64le -n ocp-ppc64le -o=json | jq -c '
     if [ ${creation_timestamp} -gt ${compare_time} ]; then
         tag=$(_jq '.name')
         echo $creation_time
-        nerdctl pull ${public_repo}:${tag}
-        nerdctl tag ${public_repo}:${tag} ${target_repo}:${tag}
-        nerdctl push ${target_repo}:${tag}
+        if [[ $(nerdctl images "${target_repo}:${tag}" | wc -l) -gt 1 ]]; then
+            echo "Image ${target_repo}:${tag} exists in the target repository."
+        else
+            echo "Image ${target_repo}:${tag} doesn't exist in the target repository. Pulling from ${public_repo}..."
+            #nerdctl pull "${public_repo}:${tag}"
+            #nerdctl tag "${public_repo}:${tag}" "${target_repo}:${tag}"
+            #nerdctl push "${target_repo}:${tag}"
+        fi
     fi
 done
 
