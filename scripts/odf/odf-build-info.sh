@@ -10,6 +10,7 @@ echo "#######  oc get pv  #######";echo; oc get pv; echo
 echo "#######  oc get pvc -n openshift-storage  #######";echo; oc get pvc -n openshift-storage; echo
 echo "#######  oc get sc -n openshift-storage  #######";echo; oc get sc -n openshift-storage; echo
 echo "#######  oc get storagecluster -n openshift-storage  #######";echo; oc get storagecluster -n openshift-storage; echo
+echo "#######  ceph version  #######";echo; oc -n openshift-storage rsh `oc get pods -n openshift-storage | grep rook-ceph-tools |  awk '{print $1}'` ceph version; echo
 echo "#######  ceph -s  #######";echo; oc -n openshift-storage rsh `oc get pods -n openshift-storage | grep rook-ceph-tools |  awk '{print $1}'` ceph -s; echo
 echo "#######  oc get cephcluster -n openshift-storage  #######";echo; oc get cephcluster -n openshift-storage; echo
 echo "#######  oc get storagesystem -n openshift-storage  #######"; echo;oc get storagesystem -n openshift-storage; echo
