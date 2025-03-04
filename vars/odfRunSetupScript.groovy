@@ -22,6 +22,7 @@ def call(){
                echo "export TIER_TEST=${TIER_TEST}" >> env_vars.sh
                echo "export VAULT_SUPPORT=${ENABLE_VAULT}" >> env_vars.sh
                echo "export FIPS_ENABLEMENT=${ENABLE_FIPS}" >> env_vars.sh
+               [ "$TIER_TEST" = "scale" ] && echo "export WORKER_VOLUME_SIZE=${WORKER_VOLUME_SIZE}" >> env_vars.sh && echo "export WORKERS=${NUM_OF_WORKERS}" >> env_vars.sh
                [ ! -z "$UPGRADE_OCS_VERSION" ] && echo "export UPGRADE_OCS_VERSION=${UPGRADE_OCS_VERSION}" >> env_vars.sh
                [ ! -z "$UPGRADE_OCS_REGISTRY" ] && echo "export UPGRADE_OCS_REGISTRY=${UPGRADE_OCS_REGISTRY}" >> env_vars.sh
                [ ! -z "$OCS_REGISTRY_IMAGE" ] && echo "export OCS_REGISTRY_IMAGE=${OCS_REGISTRY_IMAGE}" >> env_vars.sh
@@ -33,6 +34,7 @@ def call(){
                else
                    git clone -b v4.12.0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                fi
+               cat ${WORKSPACE}/env_vars.sh
                cd ${WORKSPACE}/ocs-upi-kvm; git submodule update --init;
                scp -i ${WORKSPACE}/deploy/id_rsa -o 'StrictHostKeyChecking=no' root@${BASTION_IP}:/root/openstack-upi/metadata.json ${WORKSPACE}/
                chmod 0755 ${WORKSPACE}/env_vars.sh; . ${WORKSPACE}/env_vars.sh; cd ${WORKSPACE}/ocs-upi-kvm/scripts/helper; /bin/bash ./kustomize.sh > kustomize.log 2>&1
