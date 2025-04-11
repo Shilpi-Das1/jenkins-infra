@@ -20,5 +20,7 @@ echo "#######  oc get bucketclass -n openshift-storage  #######";echo; oc get bu
 echo "#######  oc get noobaa -n openshift-storage  #######";echo; oc get noobaa -n openshift-storage; echo
 echo "#######  oc get noobaa -n openshift-storage -o yaml  #######";echo; oc get noobaa -n openshift-storage -o yaml; echo
 echo "#######  ODF build  #######"; op=`oc get csv -n openshift-storage |grep odf-operator | awk {'print $1'}`  oc get csv $op  -n openshift-storage -o yaml | grep full_version
+oc -n openshift-storage rsh `oc get pods -n openshift-storage | grep rook-ceph-tools |  awk '{print $1}'` ceph config set global bluestore_slow_ops_warn_lifetime 0 ;
+echo;
 echo "--------------------END-------------------"; echo
 
