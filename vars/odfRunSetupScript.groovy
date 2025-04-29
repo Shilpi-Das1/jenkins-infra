@@ -34,9 +34,7 @@ def call(){
                else
                    git clone -b v4.12.0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                fi
-               cd ${WORKSPACE}/ocs-upi-kvm;git checkout 4.19-rebase; git submodule update --init;
-               sed -i '/"openshift-python-wrapper==11\.0\.45",/a\        "marshmallow==3.26.1",' ${WORKSPACE}/ocs-upi-kvm/src/ocs-ci/setup.py
-               cat setup.py
+               cd ${WORKSPACE}/ocs-upi-kvm;git checkout rebase-4.19; git submodule update --init;
                scp -i ${WORKSPACE}/deploy/id_rsa -o 'StrictHostKeyChecking=no' root@${BASTION_IP}:/root/openstack-upi/metadata.json ${WORKSPACE}/
                chmod 0755 ${WORKSPACE}/env_vars.sh; . ${WORKSPACE}/env_vars.sh; cd ${WORKSPACE}/ocs-upi-kvm/scripts/helper; /bin/bash ./kustomize.sh > kustomize.log 2>&1
                [ "$TIER_TEST" = "2" ] && cd ${WORKSPACE}/ocs-upi-kvm/scripts/helper && /bin/bash ./rook-ceph-plugin.sh > rook-ceph-plugin.log 2>&1
