@@ -9,6 +9,7 @@ def call(String stagee){
                echo "========================  ODF ENV CAPTURED AT STAGE: ${STAGE} ========================" >> ${WORKSPACE}/odf-commands.txt
                sh ${WORKSPACE}/scripts/odf/odf-build-info.sh >> ${WORKSPACE}/odf-commands.txt
                grep "full_version" ${WORKSPACE}/odf-commands.txt | tail -1| awk '{print $2}' > odfbuild
+               sh ${WORKSPACE}/scripts/odf/check_crc.sh | tee -a ${WORKSPACE}/check_crc.txt
             '''
              odfbuild = readFile 'odfbuild'
              env.ODF_BUILD = "${odfbuild}".trim()

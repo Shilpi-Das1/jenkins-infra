@@ -13,3 +13,5 @@ else
     awk '/passed/||/failed/||/skipped/' ${WORKSPACE}/tier${TIER_TEST}-summary.txt | grep "^=" | sed 's/= *//g' | head -1 > ${WORKSPACE}/slacksummary.txt
 
 fi
+oc adm must-gather --image=quay.io/rhceph-dev/ocs-must-gather:latest-${ODF_VERSION} --dest-dir=${WORKSPACE}/odf-must-gather
+tar -cvzf ${WORKSPACE}/odf-must-gather.tar.gz ${WORKSPACE}/odf-must-gather

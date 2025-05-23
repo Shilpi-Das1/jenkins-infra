@@ -19,6 +19,8 @@ echo "#######  oc get backingstore -n openshift-storage  #######";echo; oc get b
 echo "#######  oc get bucketclass -n openshift-storage  #######";echo; oc get bucketclass -n openshift-storage; echo
 echo "#######  oc get noobaa -n openshift-storage  #######";echo; oc get noobaa -n openshift-storage; echo
 echo "#######  oc get noobaa -n openshift-storage -o yaml  #######";echo; oc get noobaa -n openshift-storage -o yaml; echo
-echo "#######  ODF build  #######"; op=`oc get csv -n openshift-storage |grep odf-operator | awk {'print $1'}`  oc get csv $op  -n openshift-storage -o yaml | grep full_version
+echo "#######  ODF build  #######"; 
+oc get "$(oc get csv -n openshift-storage -o name | grep odf-operator)" -n openshift-storage -o jsonpath='{.metadata.labels.full_version}'
+echo
 echo "--------------------END-------------------"; echo
 
