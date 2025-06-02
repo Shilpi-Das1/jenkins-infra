@@ -79,32 +79,26 @@ pipeline {
             steps {
                 script {
                     switch (env.OCP_RELEASE) {
-                        case "4.6":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.14":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.7":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.15":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.8":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.16":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.9":
-                            env.REDHAT_RELEASE = "8.4"
+                        case "4.17":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.10":
-                            env.REDHAT_RELEASE = "8.4"
+                        case "4.18":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.11":
-                            env.REDHAT_RELEASE = "8.5"
-                            break
-                        case "4.12":
-                            env.REDHAT_RELEASE = "9.3"
-                            break
-                        case "4.13":
-                            env.REDHAT_RELEASE = "9.3"
+                        case "4.19":
+                            env.REDHAT_RELEASE = "9.5"
                             break
                         default:
-                            env.REDHAT_RELEASE = "9.4"
+                            env.REDHAT_RELEASE = "9.6"
                     }
                 }
             }
@@ -350,7 +344,7 @@ pipeline {
     }
     post {
         always {
-            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
+            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt","check_crc.txt", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()
