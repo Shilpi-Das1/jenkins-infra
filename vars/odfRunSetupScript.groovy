@@ -30,7 +30,9 @@ def call(){
                if [ "${ODF_VERSION}" = "4.19" ]; then
                    git clone https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                elif [ "${ODF_VERSION}" = "4.13" ] || [ "${ODF_VERSION}" = "4.14" ]  || [ "${ODF_VERSION}" = "4.15" ] || [ "${ODF_VERSION}" = "4.16" ] || [ "${ODF_VERSION}" = "4.17" ] || [ "${ODF_VERSION}" = "4.18" ] ; then
-                   git clone -b v"${ODF_VERSION}".0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
+                  # git clone -b v"${ODF_VERSION}".0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
+                  git clone -b rebase-4.14-zstream https://github.com/shilpi-das1/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
+                    
                else
                    git clone -b v4.12.0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                fi
