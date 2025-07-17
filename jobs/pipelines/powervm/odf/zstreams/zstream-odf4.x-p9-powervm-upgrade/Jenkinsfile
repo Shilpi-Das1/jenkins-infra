@@ -1,4 +1,4 @@
-@Library('jenkins-upstream-library') _
+@Library('shilpi-library') _
 
 pipeline {
     agent {
@@ -16,7 +16,6 @@ pipeline {
         string(defaultValue: '', description: 'rhceph-dev/ocs-registry image of upgraded ocs version', name: 'ocsUpgradeRegistryImage')
         booleanParam(defaultValue: false, description: 'Enable/Disable Vault', name: 'Vault')
         booleanParam(defaultValue: false, description: 'Enable/Disable Fips', name: 'Fips')
-        choice(choices: ['None','1', '2', '3', '4a', '4b','4c' ],name: 'TierTest')
         string(defaultValue: '720', description: 'Enter time(in Minutes) to retain the cluster', name: 'KeepFor')
     }
      environment {
@@ -35,18 +34,17 @@ pipeline {
 
         // Parameters
         OCP_RELEASE = "${params.ocpVersion}"
-        ODF_VERSION = "${params.ocsVersion}"
+        OCS_VERSION = "${params.ocsVersion}"
         UPGRADE_OCS_VERSION = "${params.ocsUpgradeVersion}"
         OCS_REGISTRY_IMAGE = "${params.ocsRegistryImage}"
         UPGRADE_OCS_REGISTRY = "${params.ocsUpgradeRegistryImage}"
         ENABLE_VAULT = "${params.Vault}"
         ENABLE_FIPS = "${params.Fips}"
-        TIER_TEST = "${params.TierTest}"
         TIMEOUT = "${params.KeepFor}"
 
         //Env constants
         HARDWARE_CHOSE = "P9"
-        TERRAFORM_VER = "1.2.0"
+        TERRAFORM_VER = "1.9.6"
         POWERVS = false
         SCRIPT_DEPLOYMENT = false
         WAIT_FOR_DEBUG = "1"
@@ -59,8 +57,8 @@ pipeline {
 
         // ODF Variables
         PLATFORM = "powervm"
-       // OCS_REGISTRY_IMAGE="quay.io/rhceph-dev/ocs-registry:latest-stable-4.11.0"
         CONFIG_TYPE = "odf"
+        TIER_TEST_RUN = "1"
 
         // kdump Configuration
         KDUMP_ENABLE="false"
@@ -73,38 +71,39 @@ pipeline {
             steps {
                 setupCommonEnvironmentVariables()
                 setupClusterConfig("${CONFIG_TYPE}")
+                script {
+                    env.TIER_TEST = env.TIER_TEST_RUN
+                    env.ODF_VERSION = env.OCS_VERSION
+                }
             }
         }
         stage('Setting RHEL Image as per OCP version') {
             steps {
                 script {
                     switch (env.OCP_RELEASE) {
-                        case "4.6":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.14":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.7":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.15":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.8":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.16":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.9":
-                            env.REDHAT_RELEASE = "8.4"
+                        case "4.17":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.10":
-                            env.REDHAT_RELEASE = "8.4"
+                        case "4.18":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.11":
-                            env.REDHAT_RELEASE = "8.5"
+                        case "4.19":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.12":
-                            env.REDHAT_RELEASE = "9.3"
-                            break
-                        case "4.13":
-                            env.REDHAT_RELEASE = "9.3"
+                        case "4.20":
+                            env.REDHAT_RELEASE = "9.6"
                             break
                         default:
-                            env.REDHAT_RELEASE = "9.4"
+                            env.REDHAT_RELEASE = "9.5"
                     }
                 }
             }
@@ -112,7 +111,7 @@ pipeline {
 
         stage('pull artifact') {
             steps {
-                getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-build.txt" )
+                getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-stable-build.txt" )
                 getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-${OCP_RELEASE}.latest.txt")
                 getArtifacts("powervm/poll-powervc-images", "cicd-rhel-${REDHAT_RELEASE}.latest.txt")
             }
@@ -130,8 +129,8 @@ pipeline {
                         gbToMb()
                         env.OPENSHIFT_IMAGE = ""
                         env.OCP_RELEASE_TAG = ""
-                        if (fileExists("deploy/artifactory/latest-${OCP_RELEASE}-build.txt")) {
-                            env.OPENSHIFT_IMAGE = readFile "deploy/artifactory/latest-${OCP_RELEASE}-build.txt"
+                        if (fileExists("deploy/artifactory/latest-${OCP_RELEASE}-stable-build.txt")) {
+                            env.OPENSHIFT_IMAGE = readFile "deploy/artifactory/latest-${OCP_RELEASE}-stable-build.txt"
                             env.OPENSHIFT_IMAGE = env.OPENSHIFT_IMAGE.trim()
                             env.OCP_RELEASE_TAG = env.OPENSHIFT_IMAGE.split(":")[1].trim()
                         }
@@ -157,6 +156,7 @@ pipeline {
                             echo "cicd-rhel-${REDHAT_RELEASE}.latest.txt file does not exist. Please check poll-powervc-images job"
                             throw err
                         }
+                        currentBuild.description = "Upgrade ODF: ${env.ODF_VERSION} to ${env.UPGRADE_OCS_VERSION}"
                         createTemplate(env.OS_AUTH_URL, env.MASTER_VCPUS , "${MASTER_MEMORY_MB}", env.MASTER_PROCESSORS, env.MASTER_TEMPLATE)
                         createTemplate(env.OS_AUTH_URL, env.WORKER_VCPUS , "${WORKER_MEMORY_MB}", env.WORKER_PROCESSORS, env.WORKER_TEMPLATE)
                         createTemplate(env.OS_AUTH_URL, env.BASTION_VCPUS , "${BASTION_MEMORY_MB}", env.BASTION_PROCESSORS, env.BASTION_TEMPLATE)
@@ -290,10 +290,7 @@ pipeline {
                odfRunCommands("After Upgrade and before Tier ${TIER_TEST}")
             }
         }
-        stage('Run ODF tier tests') {
-            when {
-                expression { env.TIER_TEST != 'None' }
-            }
+        stage('Run tier1 test') {
             steps {
                 script {
                     ansiColor('xterm') {
@@ -304,6 +301,8 @@ pipeline {
                             cd ${WORKSPACE}/scripts/odf
                             chmod +x run-tier-tests.sh
                             chmod +x fix-config.sh
+                            chmod +x buffer_io_disabled.sh
+                            ./buffer_io_disabled.sh
                             [ ! -z "$UPGRADE_OCS_VERSION" ] && ./fix-config.sh ;
                             ./run-tier-tests.sh
                         '''
@@ -316,11 +315,33 @@ pipeline {
                  }
              }
         }
-        stage('Capture cluster information after the test') {
-            when {
-                expression { env.TIER_TEST != 'None' }
+        stage('Capture cluster information after running tier1') {
+            steps {    
+                odfRunCommands("After Tier ${TIER_TEST}")
             }
+        }
+        stage('Check Ceph health and run tier4a') {
             steps {
+                script {
+                    sh 'chmod +x ./scripts/odf/check_ceph_health.sh'
+                    def result = sh(script: './scripts/odf/check_ceph_health.sh', returnStatus: true)
+                    if (result != 0) {
+                        echo "Ceph health check failed. Not running tier-4a"
+                    } else {
+                        echo "Ceph is healthy. Running tier 4a"
+                        env.TIER_TEST = "4a"
+                        sh '''
+                          sed -i "s|^export TIER_TEST=.*$|export TIER_TEST=4a|" ${WORKSPACE}/env_vars.sh
+                          . ${WORKSPACE}/env_vars.sh
+                          ./scripts/odf/run-tier-tests.sh
+                        '''
+                        env.ODF_VERSION = env.UPGRADE_OCS_VERSION
+                    }
+                }
+            }
+        }
+        stage('Capture cluster information after running tier-4a') {
+            steps {    
                 odfRunCommands("After Tier ${TIER_TEST}")
             }
         }
@@ -350,11 +371,10 @@ pipeline {
     }
     post {
         always {
-            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
+            archiveAllArtifacts("results.tar.gz", "tier1-summary.txt", "tier4a-summary.txt", "check_crc.txt" , "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()
-            //notifyBySlack(currentBuild.result, env.MESSAGE)
             cleanWs()
         }
     }

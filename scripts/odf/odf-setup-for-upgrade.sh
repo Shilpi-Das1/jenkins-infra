@@ -1,9 +1,9 @@
 #!/bin/bash
 set -x
 if [ -d "${WORKSPACE}/ocs-upi-kvm" ]; then rm -rf ${WORKSPACE}/ocs-upi-kvm; fi
-if [ "${UPGRADE_OCS_VERSION}" = "4.16" ]; then
+if [ "${UPGRADE_OCS_VERSION}" = "4.20" ]; then
     git clone https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
-elif [ "${UPGRADE_OCS_VERSION}" = "4.14" ] || [ "${UPGRADE_OCS_VERSION}" = "4.13" ]  || [ "${UPGRADE_OCS_VERSION}" = "4.15" ] ; then
+elif [ "${UPGRADE_OCS_VERSION}" = "4.14" ]  || [ "${UPGRADE_OCS_VERSION}" = "4.15" ] || [ "${UPGRADE_OCS_VERSION}" = "4.16" ] || [ "${UPGRADE_OCS_VERSION}" = "4.17" ] || [ "${UPGRADE_OCS_VERSION}" = "4.18" ] || [ "${UPGRADE_OCS_VERSION}" = "4.19" ] ; then
     git clone -b v"${UPGRADE_OCS_VERSION}".0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
 else
     git clone -b v4.12.0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
