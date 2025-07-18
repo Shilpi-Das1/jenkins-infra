@@ -1,4 +1,4 @@
-@Library('jenkins-upstream-library') _
+@Library('shilpi-library') _
 
 pipeline {
     agent {
@@ -16,7 +16,6 @@ pipeline {
         string(defaultValue: '', description: 'rhceph-dev/ocs-registry image of upgraded ocs version', name: 'ocsUpgradeRegistryImage')
         booleanParam(defaultValue: false, description: 'Enable/Disable Vault', name: 'Vault')
         booleanParam(defaultValue: false, description: 'Enable/Disable Fips', name: 'Fips')
-        choice(choices: ['None','1', '2', '3', '4a', '4b','4c' ],name: 'TierTest')
         string(defaultValue: '720', description: 'Enter time(in Minutes) to retain the cluster', name: 'KeepFor')
     }
      environment {
@@ -41,7 +40,7 @@ pipeline {
         UPGRADE_OCS_REGISTRY = "${params.ocsUpgradeRegistryImage}"
         ENABLE_VAULT = "${params.Vault}"
         ENABLE_FIPS = "${params.Fips}"
-        TIER_TEST = "${params.TierTest}"
+        TIER_TEST = "1"
         TIMEOUT = "${params.KeepFor}"
 
         //Env constants
@@ -170,9 +169,6 @@ pipeline {
         stage('Initialize Environment') {
             steps {
                 initializeEnvironment()
-		script {
-                    env.RERUN_TIER_TEST = "1"
-                }
             }
         }
         stage('Setup Terraform Plugin') {
@@ -289,10 +285,7 @@ pipeline {
                odfRunCommands("After Upgrade and before Tier ${TIER_TEST}")
             }
         }
-        stage('Run ODF tier tests') {
-            when {
-                expression { env.TIER_TEST != 'None' }
-            }
+        stage('Run tier1 test') {
             steps {
                 script {
                     ansiColor('xterm') {
@@ -316,10 +309,31 @@ pipeline {
              }
         }
         stage('Capture cluster information after the test') {
-            when {
-                expression { env.TIER_TEST != 'None' }
+            steps {    
+                odfRunCommands("After Tier ${TIER_TEST}")
             }
+        }
+        stage('Check Ceph health and run tier4a') {
             steps {
+                script {
+                    sh 'chmod +x ./scripts/odf/check_ceph_health.sh'
+                    def result = sh(script: './scripts/odf/check_ceph_health.sh', returnStatus: true)
+                    if (result != 0) {
+                        echo "Ceph health check failed. Not running tier-4a"
+                    } else {
+                        echo "Ceph is healthy. Running tier 4a"
+                        env.TIER_TEST="4a"
+                        sh '''
+                         . ${WORKSPACE}/env_vars.sh
+                          sed -i "s|^export TIER_TEST=.*$|export TIER_TEST=4a|" ${WORKSPACE}/env_vars.sh
+                          ./run-tier-tests.sh
+                        '''
+                    }
+                }
+            }
+        }
+        stage('Capture cluster information after the test') {
+            steps {    
                 odfRunCommands("After Tier ${TIER_TEST}")
             }
         }
@@ -349,7 +363,7 @@ pipeline {
     }
     post {
         always {
-            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
+            archiveAllArtifacts("results.tar.gz", "tier1-summary.txt", "tier4a-summary.txt" "check_crc.txt" , "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()
