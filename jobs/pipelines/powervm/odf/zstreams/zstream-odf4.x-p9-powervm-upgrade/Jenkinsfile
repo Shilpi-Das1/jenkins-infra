@@ -308,7 +308,7 @@ pipeline {
                  }
              }
         }
-        stage('Capture cluster information after the test') {
+        stage('Capture cluster information after running tier1') {
             steps {    
                 odfRunCommands("After Tier ${TIER_TEST}")
             }
@@ -332,7 +332,7 @@ pipeline {
                 }
             }
         }
-        stage('Capture cluster information after the test') {
+        stage('Capture cluster information after running tier-4a') {
             steps {    
                 odfRunCommands("After Tier ${TIER_TEST}")
             }
