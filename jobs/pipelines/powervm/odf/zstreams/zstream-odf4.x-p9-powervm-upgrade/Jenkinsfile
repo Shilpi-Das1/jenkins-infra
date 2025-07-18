@@ -46,7 +46,7 @@ pipeline {
 
         //Env constants
         HARDWARE_CHOSE = "P9"
-        TERRAFORM_VER = "1.2.0"
+        TERRAFORM_VER = "1.9.6"
         POWERVS = false
         SCRIPT_DEPLOYMENT = false
         WAIT_FOR_DEBUG = "1"
@@ -59,7 +59,6 @@ pipeline {
 
         // ODF Variables
         PLATFORM = "powervm"
-       // OCS_REGISTRY_IMAGE="quay.io/rhceph-dev/ocs-registry:latest-stable-4.11.0"
         CONFIG_TYPE = "odf"
 
         // kdump Configuration
@@ -79,32 +78,29 @@ pipeline {
             steps {
                 script {
                     switch (env.OCP_RELEASE) {
-                        case "4.6":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.14":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.7":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.15":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.8":
-                            env.REDHAT_RELEASE = "8.3"
+                        case "4.16":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.9":
-                            env.REDHAT_RELEASE = "8.4"
+                        case "4.17":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.10":
-                            env.REDHAT_RELEASE = "8.4"
+                        case "4.18":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.11":
-                            env.REDHAT_RELEASE = "8.5"
+                        case "4.19":
+                            env.REDHAT_RELEASE = "9.5"
                             break
-                        case "4.12":
-                            env.REDHAT_RELEASE = "9.3"
-                            break
-                        case "4.13":
-                            env.REDHAT_RELEASE = "9.3"
+                        case "4.20":
+                            env.REDHAT_RELEASE = "9.6"
                             break
                         default:
-                            env.REDHAT_RELEASE = "9.4"
+                            env.REDHAT_RELEASE = "9.5"
                     }
                 }
             }
@@ -112,7 +108,7 @@ pipeline {
 
         stage('pull artifact') {
             steps {
-                getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-build.txt" )
+                getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-stable-build.txt" )
                 getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-${OCP_RELEASE}.latest.txt")
                 getArtifacts("powervm/poll-powervc-images", "cicd-rhel-${REDHAT_RELEASE}.latest.txt")
             }
@@ -174,6 +170,9 @@ pipeline {
         stage('Initialize Environment') {
             steps {
                 initializeEnvironment()
+		script {
+                    env.RERUN_TIER_TEST = "1"
+                }
             }
         }
         stage('Setup Terraform Plugin') {
@@ -354,7 +353,6 @@ pipeline {
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()
-            //notifyBySlack(currentBuild.result, env.MESSAGE)
             cleanWs()
         }
     }
