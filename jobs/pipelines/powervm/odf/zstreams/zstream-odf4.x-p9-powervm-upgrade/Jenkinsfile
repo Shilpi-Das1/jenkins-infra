@@ -296,6 +296,8 @@ pipeline {
                             cd ${WORKSPACE}/scripts/odf
                             chmod +x run-tier-tests.sh
                             chmod +x fix-config.sh
+                            chmod +x buffer_io_disabled.sh
+                            ./buffer_io_disabled.sh
                             [ ! -z "$UPGRADE_OCS_VERSION" ] && ./fix-config.sh ;
                             ./run-tier-tests.sh
                         '''
@@ -326,7 +328,8 @@ pipeline {
                         sh '''
                          . ${WORKSPACE}/env_vars.sh
                           sed -i "s|^export TIER_TEST=.*$|export TIER_TEST=4a|" ${WORKSPACE}/env_vars.sh
-                          ./run-tier-tests.sh
+                          cat ${WORKSPACE}/env_vars.sh
+                          ./scripts/odf/run-tier-tests.sh
                         '''
                     }
                 }
