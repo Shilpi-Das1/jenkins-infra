@@ -324,13 +324,16 @@ pipeline {
                         echo "Ceph health check failed. Not running tier-4a"
                     } else {
                         echo "Ceph is healthy. Running tier 4a"
-                        env.TIER_TEST="4a"
+                        env.TIER_TEST = "4a"
+                        echo "------- Tier-test  ${TIER_TEST}---------"
                         sh '''
                          . ${WORKSPACE}/env_vars.sh
                           sed -i "s|^export TIER_TEST=.*$|export TIER_TEST=4a|" ${WORKSPACE}/env_vars.sh
                           cat ${WORKSPACE}/env_vars.sh
                           ./scripts/odf/run-tier-tests.sh
                         '''
+                        env.ODF_VERSION = env.UPGRADE_OCS_VERSION
+                        echo "-------ODF Version------${ODF_VERSION}"
                     }
                 }
             }
@@ -338,6 +341,9 @@ pipeline {
         stage('Capture cluster information after running tier-4a') {
             steps {    
                 odfRunCommands("After Tier ${TIER_TEST}")
+                scripts{
+                     echo "------- Tier-test  ${TIER_TEST}---------"
+                }
             }
         }
         stage('Waiting to timeout') {
