@@ -3,9 +3,10 @@ set -x
 if [ -d "${WORKSPACE}/ocs-upi-kvm" ]; then rm -rf ${WORKSPACE}/ocs-upi-kvm; fi
 if [ "${UPGRADE_OCS_VERSION}" = "4.19" ]; then
     git clone https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
+elif [ "${UPGRADE_OCS_VERSION}" = "4.14" ]  || [ "${UPGRADE_OCS_VERSION}" = "4.15" ] ; then
+    git clone -b v"${UPGRADE_OCS_VERSION}".0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm                  
 else
-    git clone -b rebase-4.14-zstream https://github.com/Shilpi-Das1/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
-   # git clone -b v"${UPGRADE_OCS_VERSION}".0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
+    git clone -b v"${UPGRADE_OCS_VERSION}".0 https://github.com/shilpi-das1/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
 fi
 cd ${WORKSPACE}/ocs-upi-kvm; git submodule update --init;
 scp -i ${WORKSPACE}/deploy/id_rsa -o 'StrictHostKeyChecking=no' root@${BASTION_IP}:/root/openstack-upi/metadata.json ${WORKSPACE}/
