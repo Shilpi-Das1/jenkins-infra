@@ -1,4 +1,4 @@
-@Library('shilpi-library') _
+@Library('jenkins-upstream-library') _
 
 pipeline {
     agent {
@@ -80,6 +80,7 @@ pipeline {
         stage('Setting RHEL Image as per OCP version') {
             steps {
                 script {
+		    env.RERUN_TIER_TEST = "1"
                     switch (env.OCP_RELEASE) {
                         case "4.14":
                             env.REDHAT_RELEASE = "9.5"
