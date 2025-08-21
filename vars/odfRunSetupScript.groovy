@@ -36,8 +36,8 @@ def call(){
                fi
                cd ${WORKSPACE}/ocs-upi-kvm; git submodule update --init;
                scp -i ${WORKSPACE}/deploy/id_rsa -o 'StrictHostKeyChecking=no' root@${BASTION_IP}:/root/openstack-upi/metadata.json ${WORKSPACE}/
-               chmod 0755 ${WORKSPACE}/env_vars.sh; . ${WORKSPACE}/env_vars.sh; cd ${WORKSPACE}/ocs-upi-kvm/scripts/helper; /bin/bash ./kustomize.sh > kustomize.log 2>&1
-               [ "$TIER_TEST" = "2" ] && cd ${WORKSPACE}/ocs-upi-kvm/scripts/helper && /bin/bash ./rook-ceph-plugin.sh > rook-ceph-plugin.log 2>&1
+               chmod 0755 ${WORKSPACE}/env_vars.sh; . ${WORKSPACE}/env_vars.sh;
+               [ "$TIER_TEST" = "2" ] && cd "${WORKSPACE}/ocs-upi-kvm/scripts/helper" && /bin/bash ./kustomize.sh > kustomize.log 2>&1 && /bin/bash ./rook-ceph-plugin.sh > rook-ceph-plugin.log 2>&1
                [ "$ENABLE_VAULT" = "true" ] && cd ${WORKSPACE}/ocs-upi-kvm/scripts/helper && /bin/bash ./vault-setup.sh > vault-setup.log 2>&1
                . ${WORKSPACE}/env_vars.sh; cd ${WORKSPACE}/ocs-upi-kvm/scripts; /bin/bash ./setup-ocs-ci.sh > setup-ocs-ci.log 2>&1
             '''
