@@ -40,7 +40,7 @@ pipeline {
         TEMPLATE_FILE = ".${TARGET}.tfvars.template"
 
         BUCKET_NAME="ocp4-images-bucket"
-        PVSADM_VERSION="v0.1.5"
+        PVSADM_VERSION="v0.1.22"
         SECRET_KEY_POWERVS = credentials('SECRET_KEY_POWERVS')
         ACCESS_KEY_POWERVS = credentials('ACCESS_KEY_POWERVS')
         POWERVS = true

@@ -9,7 +9,7 @@ pipeline {
 	    string(defaultValue: '', description: 'Rhel Url', name: 'RhelUrl')
 	    string(defaultValue: '', description: 'Rhcos Url', name: 'RhcosUrl')
 	    string(defaultValue: '', description: 'Centos Url', name: 'CentosUrl')
-            string(defaultValue: 'v0.1.3-alpha.2', description: "Pvsadm version", name: 'pvsadmVersion')
+            string(defaultValue: 'v0.1.22', description: "Pvsadm version", name: 'pvsadmVersion')
 	    text(defaultValue: '''ocp-addons-toronto-01
                             ocp-addons-frankfurt-01
                             ocp-cicd-dallas

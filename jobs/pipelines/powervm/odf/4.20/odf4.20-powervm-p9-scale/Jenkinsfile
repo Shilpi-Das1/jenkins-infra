@@ -87,7 +87,7 @@ pipeline {
                             throw err
                         }
                         if (fileExists("deploy/artifactory/cicd-rhcos-${RHCOS_RELEASE}.latest.txt")) {
-+                            env.RHCOS_IMAGE = readFile "deploy/artifactory/cicd-rhcos-${RHCOS_RELEASE}.latest.txt"
+                             env.RHCOS_IMAGE = readFile "deploy/artifactory/cicd-rhcos-${RHCOS_RELEASE}.latest.txt"
                              env.RHCOS_IMAGE_NAME = env.RHCOS_IMAGE.split()[0].trim()
                              env.RHCOS_IMAGE_ID = env.RHCOS_IMAGE.split()[1].trim()
                         }

@@ -44,7 +44,7 @@ pipeline {
 
         // Type of configuration
         CONFIG_TYPE="min"
-        PVSADM_VERSION="v0.1.5"
+        PVSADM_VERSION="v0.1.22"
         CRN_OBJECT = "crn:v1:bluemix:public:cloud-object-storage:global:a/7cfbd5381a434af7a09289e795840d4e:28b5b206-4182-4324-8f5d-0d9234989a92::"
         BUCKET_NAME="ibm-internal-cicd-ocp-bucket"
 
