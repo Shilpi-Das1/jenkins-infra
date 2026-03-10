@@ -29,7 +29,7 @@ pipeline {
         WAIT_FOR_DEBUG = "1"
         REDHAT_RELEASE = "9.7"
         OCP_RELEASE = "4.22"
-        RHCOS_RELEASE="4.19"
+        RHCOS_RELEASE="9.8"
 
         //Branch
         OPENSHIFT_POWERVC_GIT_TF_DEPLOY_BRANCH="main"//The download branch
