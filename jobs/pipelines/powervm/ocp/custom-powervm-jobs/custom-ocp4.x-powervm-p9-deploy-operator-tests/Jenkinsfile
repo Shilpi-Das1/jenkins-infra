@@ -12,13 +12,15 @@ pipeline {
         string(defaultValue: '', description: 'Build(quay image or build number)', name: 'Build')
         string(defaultValue: '30', description: 'Enter time(in Minutes) to retain the cluster', name: 'KeepFor')
         string(defaultValue: '1.22.4', description: 'Enter the Go Language Version', name: 'GoLangVersion')
-        choice(description: 'Select the OpenShift Release', choices: ['4.21','4.20','4.19','4.18','4.17','4.16','4.15','4.14','4.13','4.12'], name: 'Release')
+        choice(description: 'Select the OpenShift Release', choices: ['4.22','4.21','4.20','4.19','4.18','4.17','4.16','4.15','4.14','4.13','4.12'], name: 'Release')
         choice(description: 'Select the RedHat Release Version', choices: ['9.7','9.6','8.10'], name: 'RedHatRelease')
-        choice(description: 'Select the Configuration', choices: ['min','max'], name: 'Config')
+        choice(description: 'Select the Configuration', choices: ['min','max','odf'], name: 'Config')
         booleanParam(defaultValue: false, name: 'RunCroE2e', description: 'Select if you want to run CRO e2e tests. E2e runs after cluster Deployed')
         booleanParam(defaultValue: false, name: 'RunMetallbE2e', description: 'Select if you want to run Metallb e2e tests. E2e runs after cluster Deployed')
         booleanParam(defaultValue: false, name: 'RunCoE2e', description: 'Select if you want to run Compliance operator e2e tests. E2e runs after cluster Deployed')
         booleanParam(defaultValue: false, name: 'RunFioE2e', description: 'Select if you want to run Fio operator e2e tests. E2e runs after cluster Deployed')
+        booleanParam(defaultValue: false, name: 'InstallLSO', description: 'Install Local Storage Operator')
+        string(defaultValue: '', description: 'Enter index image for installing LSO', name: 'IndexImageLSO')
         string(defaultValue: '', description: 'Enter index image if you want to run the CO e2e', name: 'IndexImageCo')
         string(defaultValue: '', description: 'Enter index image if you want to run the FIO e2e', name: 'IndexImagefio')
     } 
@@ -63,6 +65,9 @@ pipeline {
         L2_ADDRESS1="10.20.182.101"
         L2_ADDRESS2="10.20.182.102"
         BGB_ADDRESS1="10.20.182.103"
+        //LSO 
+        ENABLE_LSO_INSTALL = "${params.InstallLSO}"
+        LSO_CATALOGSOURCE_IMAGE = "${params.IndexImageLSO}"
 
         //Parameters
         REDHAT_RELEASE="${params.RedHatRelease}"
@@ -86,7 +91,7 @@ pipeline {
                 setupClusterConfig("${CONFIG_TYPE}")
                 script {
                     env.BASTION_MEMORY = "16"
-                    // Added a condition for RHCOS_RELEASE to be set to 4.19 for OCP 4.20/4.21
+                    // Added a condition for RHCOS_RELEASE to be set to 4.19 for OCP 4.20/4.21/4.22
                     if (env.OCP_RELEASE == "4.20" || env.OCP_RELEASE == "4.21" || env.OCP_RELEASE == "4.22"){
                         env.RHCOS_RELEASE = "4.19"
                     }
@@ -100,7 +105,7 @@ pipeline {
             steps {
                 script {
                     getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-build.txt")
-                    getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-${OCP_RELEASE}.latest.txt")
+                    getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-${RHCOS_RELEASE}.latest.txt")
                     getArtifacts("powervm/poll-powervc-images", "cicd-rhel-${REDHAT_RELEASE}.latest.txt")
                 }
             }
@@ -148,13 +153,13 @@ pipeline {
                             echo "CURRENT build is empty"
                             throw err
                         }
-                        if (fileExists("deploy/artifactory/cicd-rhcos-${OCP_RELEASE}.latest.txt")) {
-                            env.RHCOS_IMAGE = readFile "deploy/artifactory/cicd-rhcos-${OCP_RELEASE}.latest.txt"
+                        if (fileExists("deploy/artifactory/cicd-rhcos-${RHCOS_RELEASE}.latest.txt")) {
+                            env.RHCOS_IMAGE = readFile "deploy/artifactory/cicd-rhcos-${RHCOS_RELEASE}.latest.txt"
                             env.RHCOS_IMAGE_NAME = env.RHCOS_IMAGE.split()[0].trim()
                             env.RHCOS_IMAGE_ID = env.RHCOS_IMAGE.split()[1].trim()
                         }
                         else {
-                            echo "cicd-rhcos-${OCP_RELEASE}.latest.txt file does not exist. Please check poll-powervc-images job"
+                            echo "cicd-rhcos-${RHCOS_RELEASE}.latest.txt file does not exist. Please check poll-powervc-images job"
                             throw err
                         }
                         if (fileExists("deploy/artifactory/cicd-rhel-${REDHAT_RELEASE}.latest.txt")) {
@@ -290,6 +295,26 @@ pipeline {
                             }
                             catch(err) {
                                 echo 'Running FIO_operator script failed!'
+                                failedStages.add(env.STAGE_NAME)
+                                throw err
+                            }
+                        }
+                    }
+                }
+                stage('Install LSO') {
+                    when { expression { return env.ENABLE_LSO_INSTALL == "true"; } }
+                    steps {
+                        script {
+                            ansiColor('xterm') {
+                            echo ""
+                            }
+                            try {
+                                sh '''
+                                    cd ${WORKSPACE} && chmod +x ./scripts/operator/lso_operator.sh && ./scripts/operator/lso_operator.sh
+                                '''
+                            }
+                            catch(err) {
+                                echo 'LSO operator installation failed!'
                                 failedStages.add(env.STAGE_NAME)
                                 throw err
                             }
