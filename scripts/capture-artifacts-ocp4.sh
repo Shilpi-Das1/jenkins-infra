@@ -53,6 +53,8 @@ if [ ! -z "${BASTION_IP}" ]; then
         scp -i id_rsa -o StrictHostKeyChecking=no root@${BASTION_IP}:/tmp/fio/fio-e2e-*.txt .
         scp -i id_rsa -o StrictHostKeyChecking=no root@${BASTION_IP}:/tmp/metallb/e2e-metallb-*-logs.txt .
         scp -i id_rsa -o StrictHostKeyChecking=no root@${BASTION_IP}:~/cluster-health.log .
+        scp -i id_rsa -o StrictHostKeyChecking=no root@${BASTION_IP}:~/cron_quay.log .
+
         # Restoring resolv.conf
         cp -rf /etc/resolv.conf.tmp /etc/resolv.conf || true
     else
