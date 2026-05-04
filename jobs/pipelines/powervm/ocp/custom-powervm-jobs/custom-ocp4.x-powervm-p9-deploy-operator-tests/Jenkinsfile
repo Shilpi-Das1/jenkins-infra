@@ -23,6 +23,7 @@ pipeline {
         string(defaultValue: '', description: 'Enter index image for installing LSO', name: 'IndexImageLSO')
         string(defaultValue: '', description: 'Enter index image if you want to run the CO e2e', name: 'IndexImageCo')
         string(defaultValue: '', description: 'Enter index image if you want to run the FIO e2e', name: 'IndexImagefio')
+        string(defaultValue: '', description: 'Enter index image if you want to run the Metallb e2e', name: 'IndexImageMetallb')
     } 
     environment {
         //users and credentials. All must be defined in Jenkins Credentials
@@ -55,6 +56,7 @@ pipeline {
         ENABLE_CRO_E2E_TEST = "${params.RunCroE2e}"
         //Metallb operator E2e
         ENABLE_METALLB_E2E_TEST = "${params.RunMetallbE2e}"
+        METALLB_CATALOGSOURCE_IMAGE = "${params.IndexImageMetallb}"
         //Compliance Operator e2e
         ENABLE_CO_E2E_TEST = "${params.RunCoE2e}"
         COMPLIANCE_CATALOGSOURCE_IMAGE = "${params.IndexImageCo}"

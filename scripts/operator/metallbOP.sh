@@ -5,11 +5,12 @@ ansible all -m setup -a 'gather_subset=!all'
 cd ${WORKSPACE}/ocp4-playbooks-extras
 cp examples/metallb_vars.yml metallb_vars.yml
 sed -i "s|metallb_enabled:.*$|metallb_enabled: true|g" metallb_vars.yml
-sed -i "s|metallb_install_operator:.*$|metallb_install_operator: true|g" metallb_vars.yml
-sed -i "s|metallb_e2e:.*$|metallb_e2e: true|g" metallb_vars.yml
 sed -i "s|metallb_enable_global_secret:.*$|metallb_enable_global_secret: false|g" metallb_vars.yml
 sed -i "s|ocp_version:.*|ocp_version: ${OCP_RELEASE}|g" metallb_vars.yml
 sed -i "s|metallb_golang_tarball:.*$|metallb_golang_tarball: ${GOLANG_TARBALL}|g" metallb_vars.yml
+sed -i "s|metallb_openshift_tests_private_git_branch:.*$|metallb_openshift_tests_private_git_branch: main|g" metallb_vars.yml
+sed -i "s|metallb_catalog_source_image:.*$|metallb_catalog_source_image: ${METALLB_CATALOGSOURCE_IMAGE}|g" metallb_vars.yml
+sed -i "s|metallb_e2e_git_branch:.*$|metallb_e2e_git_branch: release-${OCP_RELEASE}|g" metallb_vars.yml
 yq -iy ".l2_address = [\"${L2_ADDRESS1}\", \"${L2_ADDRESS2}\"] | .bgp_address = [\"${BGB_ADDRESS1}\"]" metallb_vars.yml
 cat metallb_vars.yml
 #Inventory Details
