@@ -49,6 +49,8 @@ connection_timeout = "__CONNECTION_TIME_OUT__"
 
 fips_compliant = __FIPS_COMPLIANT__
 
+qe_only_disable_image_policy = __QE_ONLY_DISABLE_IMAGE_POLICY__
+
 kdump_enable = "__KDUMP_ENABLE__"
 
 e2e_tests_git = "__E2E_GIT__"

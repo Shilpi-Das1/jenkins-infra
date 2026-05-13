@@ -44,6 +44,8 @@ cni_network_provider = "__CNI_NETWORK_PROVIDER__"
 
 fips_compliant = __FIPS_COMPLIANT__
 
+qe_only_disable_image_policy = __QE_ONLY_DISABLE_IMAGE_POLICY__
+
 installer_log_level         = "info"
 ansible_extra_options       = "-v"
 pull_secret_file            = "__PULL_SECRET_FILE__"
