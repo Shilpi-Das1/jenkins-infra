@@ -49,6 +49,9 @@ pipeline {
         NUM_OF_WORKERS = "4"
         WORKER_VOLUME_SIZE = "1T"
 
+        //QE only disable image policy for OCP 4.22+
+        QE_ONLY_DISABLE_IMAGE_POLICY="true"
+
 	 }
     stages {
         stage('Setup Common Environment Variables') {

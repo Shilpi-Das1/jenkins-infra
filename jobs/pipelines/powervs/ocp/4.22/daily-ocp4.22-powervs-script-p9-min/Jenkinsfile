@@ -44,9 +44,12 @@ pipeline {
 
         // Type of configuration
         CONFIG_TYPE="min"
-        
+
         //enable kdump
         KDUMP_ENABLE="true"
+
+        //QE only disable image policy for OCP 4.22+
+        QE_ONLY_DISABLE_IMAGE_POLICY="true"
 	 }
 
     stages {

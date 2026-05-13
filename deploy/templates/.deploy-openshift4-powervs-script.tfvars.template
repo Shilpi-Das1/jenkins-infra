@@ -31,6 +31,8 @@ release_image_override = "__OPENSHIFT_IMAGE__"
 
 fips_compliant = __FIPS_COMPLIANT__
 
+qe_only_disable_image_policy = __QE_ONLY_DISABLE_IMAGE_POLICY__
+
 kdump_enable = "__KDUMP_ENABLE__"
 
 cluster_domain = "__CLUSTER_DOMAIN__"
