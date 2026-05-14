@@ -23,7 +23,7 @@ pipeline {
         SERVICE_INSTANCE_ID = "7545067f-dc8c-40d3-be18-13f433d19b62"
 
         BASTION_IMAGE = "rhel-97"
-        RHCOS_IMAGE = "rhcos-419"
+        RHCOS_IMAGE = "rhcos-98"
         BASTION_IMAGE_FILE = "latest-${BASTION_IMAGE}-rdr-ocp-cicd-montreal01.txt"
         RHCOS_IMAGE_FILE = "latest-${RHCOS_IMAGE}-rdr-ocp-cicd-montreal01.txt"
         OCP_RELEASE = "4.22"
@@ -55,7 +55,7 @@ pipeline {
     stages {
         stage('Clone ansible extra') {
             steps {
-                cloneRepo("https://github.com/ocp-power-automation/ocp4-playbooks-extras", "ocp4-playbooks-extras", "*/main")
+                cloneRepo("https://github.com/Poorna-Gottimukkula1/ocp4-playbooks-extras", "ocp4-playbooks-extras", "*/4.22-branch-e2e")
             }
         }
         stage('Setup Common Environment Variables') {

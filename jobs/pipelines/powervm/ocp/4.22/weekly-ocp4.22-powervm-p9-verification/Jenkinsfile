@@ -26,7 +26,7 @@ pipeline {
         HARDWARE_CHOSE = "P9"
         TERRAFORM_VER = "1.14.4"
         OCP_RELEASE="4.22"
-        RHCOS_RELEASE="4.19"
+        RHCOS_RELEASE="9.8"
         TARGET = "deploy-openshift4-powervc"
         TEMPLATE_FILE = ".${TARGET}.tfvars.template"
         POWERVS = false
@@ -56,7 +56,7 @@ pipeline {
     stages {
         stage('Clone ansible extra') {
             steps {
-                cloneRepo("https://github.com/ocp-power-automation/ocp4-playbooks-extras", "ocp4-playbooks-extras", "*/main")
+                cloneRepo("https://github.com/Poorna-Gottimukkula1/ocp4-playbooks-extras", "ocp4-playbooks-extras", "*/4.22-branch-e2e")
             }
         }
         stage('Setup Common Environment Variables') {
