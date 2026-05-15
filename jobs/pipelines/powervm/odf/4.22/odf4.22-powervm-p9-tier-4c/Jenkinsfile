@@ -1,9 +1,9 @@
-@Library('jenkins-upstream-library') _
+@Library('shilpi-library') _
 
 pipeline {
     agent {
         docker {
-            image 'quay.io/powercloud/inbound-agent:3256.v88a_f6e922152-2-jdk17.1'
+            image 'quay.io/pgottimu/inbound-agent:3355.v388858a_47b_33-21-jdk17'
             args '-v /etc/resolv.conf:/etc/resolv.conf.tmp '
             label 'jump-vpc-x86_64'
         }
