@@ -33,9 +33,9 @@ def call(){
                   [ "${ODF_VERSION}" = "4.20" ] || [ "${ODF_VERSION}" = "4.21" ]; then
                    git clone -b v"${ODF_VERSION}".0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                else
-                   git clone https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
+                   git clone https://github.com/shilpi-das1/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                fi
-               cd ${WORKSPACE}/ocs-upi-kvm; git submodule update --init;
+               cd ${WORKSPACE}/ocs-upi-kvm;git checkout 4.22-changes; git submodule update --init;
                scp -i ${WORKSPACE}/deploy/id_rsa -o 'StrictHostKeyChecking=no' root@${BASTION_IP}:/root/openstack-upi/metadata.json ${WORKSPACE}/
                chmod 0755 ${WORKSPACE}/env_vars.sh; . ${WORKSPACE}/env_vars.sh;
                [ "$TIER_TEST" = "2" ] && cd "${WORKSPACE}/ocs-upi-kvm/scripts/helper" && /bin/bash ./kustomize.sh > kustomize.log 2>&1 && /bin/bash ./rook-ceph-plugin.sh > rook-ceph-plugin.log 2>&1
