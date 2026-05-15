@@ -1,4 +1,4 @@
-@Library('jenkins-upstream-library') _
+@Library('shilpi-library') _
 
 pipeline {
     agent {
