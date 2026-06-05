@@ -1,22 +1,19 @@
-@Library('jenkins-upstream-library') _
+@Library('shilpi-zstream-library') _
 
 pipeline {
     agent {
         docker {
-            image 'quay.io/powercloud/inbound-agent:3256.v88a_f6e922152-2-jdk17.1'
+            image 'quay.io/pgottimu/inbound-agent:3355.v388858a_47b_33-21-jdk17'
             args '-v /etc/resolv.conf:/etc/resolv.conf.tmp '
             label 'jump-vpc-x86_64'
         }
     }
     parameters {
-        string(defaultValue: '', description: 'OCP version on which OCS/ODF will be deployed', name: 'ocpVersion')
-        string(defaultValue: '', description: 'OCS version which you want to upgrade', name: 'ocsVersion')
-        string(defaultValue: '', description: 'rhceph-dev/ocs-registry Image used for deploying OCS/ODF', name: 'ocsRegistryImage')
-        string(defaultValue: '', description: 'OCS version in which you want to upgrade', name: 'ocsUpgradeVersion')
-        string(defaultValue: '', description: 'rhceph-dev/ocs-registry image of upgraded ocs version', name: 'ocsUpgradeRegistryImage')
-        booleanParam(defaultValue: false, description: 'Enable/Disable Vault', name: 'Vault')
-        booleanParam(defaultValue: false, description: 'Enable/Disable Fips', name: 'Fips')
-        choice(choices: ['None','1', '2', '3', '4a', '4b','4c' ],name: 'TierTest')
+        string(defaultValue: '', description: 'OCP version on which OCS/ODF will be deployed (e.g., 4.16)', name: 'ocpVersion')
+        string(defaultValue: '', description: 'OCS version which you want to upgrade from (e.g., 4.15 - CURRENT_OCS_CHANNEL)', name: 'ocsVersion')
+        string(defaultValue: '', description: 'OCS version to which you want to upgrade (e.g., 4.16 - UPGRADE_OCS_CHANNEL)', name: 'ocsUpgradeVersion')
+        string(defaultValue: '', description: 'rhceph-dev/ocs-registry image of upgraded ocs version (e.g., quay.io/rhceph-dev/ocs-registry:latest-stable-4.16 - UPGRADE_OCS_IMAGE)', name: 'ocsUpgradeRegistryImage')
+        string(defaultValue: '', description: 'MUST_GATHER_IMAGE (e.g., quay.io/rhceph-dev/ocs-must-gather:latest-4.19 or quay.io/rhceph-dev/odf4-odf-must-gather-rhel9:v4.21.0)', name: 'mustGatherImage')
         string(defaultValue: '720', description: 'Enter time(in Minutes) to retain the cluster', name: 'KeepFor')
     }
      environment {
@@ -34,19 +31,16 @@ pipeline {
 
 
         // Parameters
-        OCP_RELEASE = "${params.ocpVersion}"
-        ODF_VERSION = "${params.ocsVersion}"
-        UPGRADE_OCS_VERSION = "${params.ocsUpgradeVersion}"
-        OCS_REGISTRY_IMAGE = "${params.ocsRegistryImage}"
-        UPGRADE_OCS_REGISTRY = "${params.ocsUpgradeRegistryImage}"
-        ENABLE_VAULT = "${params.Vault}"
-        ENABLE_FIPS = "${params.Fips}"
-        TIER_TEST = "${params.TierTest}"
+        OCP_VERSION = "${params.ocpVersion}"
+        CURRENT_OCS_CHANNEL = "${params.ocsVersion}"
+        UPGRADE_OCS_CHANNEL = "${params.ocsUpgradeVersion}"
+        UPGRADE_OCS_IMAGE = "${params.ocsUpgradeRegistryImage}"
+        MUST_GATHER_IMAGE = "${params.mustGatherImage}"
         TIMEOUT = "${params.KeepFor}"
 
         //Env constants
         HARDWARE_CHOSE = "P9"
-        TERRAFORM_VER = "1.2.0"
+        TERRAFORM_VER = "1.14.4"
         POWERVS = false
         SCRIPT_DEPLOYMENT = false
         WAIT_FOR_DEBUG = "1"
@@ -59,11 +53,12 @@ pipeline {
 
         // ODF Variables
         PLATFORM = "powervm"
-       // OCS_REGISTRY_IMAGE="quay.io/rhceph-dev/ocs-registry:latest-stable-4.11.0"
         CONFIG_TYPE = "odf"
+        ODF_UPGRADE_REPO_DIR = "odf_upgrade_repo"
 
         // kdump Configuration
         KDUMP_ENABLE="false"
+        REDHAT_RELEASE = "9.7"
 
 
 
@@ -75,46 +70,26 @@ pipeline {
                 setupClusterConfig("${CONFIG_TYPE}")
             }
         }
-        stage('Setting RHEL Image as per OCP version') {
-            steps {
-                script {
-                    switch (env.OCP_RELEASE) {
-                        case "4.6":
-                            env.REDHAT_RELEASE = "8.3"
-                            break
-                        case "4.7":
-                            env.REDHAT_RELEASE = "8.3"
-                            break
-                        case "4.8":
-                            env.REDHAT_RELEASE = "8.3"
-                            break
-                        case "4.9":
-                            env.REDHAT_RELEASE = "8.4"
-                            break
-                        case "4.10":
-                            env.REDHAT_RELEASE = "8.4"
-                            break
-                        case "4.11":
-                            env.REDHAT_RELEASE = "8.5"
-                            break
-                        case "4.12":
-                            env.REDHAT_RELEASE = "9.7"
-                            break
-                        case "4.13":
-                            env.REDHAT_RELEASE = "9.7"
-                            break
-                        default:
-                            env.REDHAT_RELEASE = "9.7"
-                    }
-                }
-            }
-        }
 
         stage('pull artifact') {
             steps {
-                getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-build.txt" )
-                getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-${OCP_RELEASE}.latest.txt")
-                getArtifacts("powervm/poll-powervc-images", "cicd-rhel-${REDHAT_RELEASE}.latest.txt")
+                script {
+                    getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-build.txt" )
+                    
+                    // Determine RHCOS file based on OCP version
+                    def ocpVersionParts = OCP_VERSION.tokenize('.')
+                    def majorVersion = ocpVersionParts[0].toInteger()
+                    def minorVersion = ocpVersionParts[1].toInteger()
+                    
+                    // Use cicd-rhcos-9.8.latest.txt for OCP 4.22 and above
+                    if (majorVersion > 4 || (majorVersion == 4 && minorVersion >= 22)) {
+                        getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-9.8.latest.txt")
+                    } else {
+                        getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-${OCP_RELEASE}.latest.txt")
+                    }
+                    
+                    getArtifacts("powervm/poll-powervc-images", "cicd-rhel-${REDHAT_RELEASE}.latest.txt")
+                }
             }
         }
         //Checkout the installer git repo
@@ -139,13 +114,26 @@ pipeline {
                             echo "latest-${OCP_RELEASE}-build.txt file does not exist. Please check mirror-openshift-release job"
                             throw err
                         }
-                        if (fileExists("deploy/artifactory/cicd-rhcos-${OCP_RELEASE}.latest.txt")) {
-                            env.RHCOS_IMAGE = readFile "deploy/artifactory/cicd-rhcos-${OCP_RELEASE}.latest.txt"
+                        // Determine RHCOS file based on OCP version
+                        def ocpVersionParts = OCP_VERSION.tokenize('.')
+                        def majorVersion = ocpVersionParts[0].toInteger()
+                        def minorVersion = ocpVersionParts[1].toInteger()
+                        def rhcosFileName = ""
+                        
+                        // Use cicd-rhcos-9.8.latest.txt for OCP 4.22 and above
+                        if (majorVersion > 4 || (majorVersion == 4 && minorVersion >= 22)) {
+                            rhcosFileName = "cicd-rhcos-9.8.latest.txt"
+                        } else {
+                            rhcosFileName = "cicd-rhcos-${OCP_RELEASE}.latest.txt"
+                        }
+                        
+                        if (fileExists("deploy/artifactory/${rhcosFileName}")) {
+                            env.RHCOS_IMAGE = readFile "deploy/artifactory/${rhcosFileName}"
                             env.RHCOS_IMAGE_NAME = env.RHCOS_IMAGE.split()[0].trim()
                             env.RHCOS_IMAGE_ID = env.RHCOS_IMAGE.split()[1].trim()
                         }
                         else {
-                            echo "cicd-rhel-${REDHAT_RELEASE}.latest.txt file does not exist. Please check poll-powervc-images job"
+                            echo "${rhcosFileName} file does not exist. Please check poll-powervc-images job"
                             throw err
                         }
                         if (fileExists("deploy/artifactory/cicd-rhel-${REDHAT_RELEASE}.latest.txt")) {
@@ -191,15 +179,37 @@ pipeline {
                 setupKubeconfigOcp4()
             }
         }
-        stage('Run ODF Setup script') {
+        stage('Setup ODF') {
+
             steps {
                 odfAuthYaml()
                 script {
                     try {
-                        sh '''
-                            cd ${WORKSPACE}/scripts/odf
-                            chmod +x odf-rescan-scsi.sh
-                            ./odf-rescan-scsi.sh
+                        sh '''#!/bin/bash
+                            cd ${WORKSPACE}
+                            git clone https://github.com/Shilpi-Das1/odf_upgrade_repo
+                            cd ${ODF_UPGRADE_REPO_DIR}
+                            
+                            # Read AUTH_YAML content from auth.yaml file
+                            AUTH_YAML_CONTENT=$(cat ${WORKSPACE}/deploy/data/auth.yaml | tr -d '\\n')
+                            
+                            # Update var.ini with parameter values using sed
+                            sed -i "s|^CURRENT_OCS_CHANNEL=.*|CURRENT_OCS_CHANNEL=${CURRENT_OCS_CHANNEL}|g" var.ini
+                            sed -i "s|^UPGRADE_OCS_IMAGE=.*|UPGRADE_OCS_IMAGE=${UPGRADE_OCS_IMAGE}|g" var.ini
+                            sed -i "s|^UPGRADE_OCS_CHANNEL=.*|UPGRADE_OCS_CHANNEL=${UPGRADE_OCS_CHANNEL}|g" var.ini
+                            sed -i "s|^OCP_VERSION=.*|OCP_VERSION=${OCP_VERSION}|g" var.ini
+                            sed -i "s|^PLATFORM=.*|PLATFORM=${PLATFORM}|g" var.ini
+                            sed -i "s|^VAULT_SUPPORT=.*|VAULT_SUPPORT=false|g" var.ini
+                            sed -i "s|^FIPS_ENABLEMENT=.*|FIPS_ENABLEMENT=false|g" var.ini
+                            sed -i "s|^AUTH_YAML=.*|AUTH_YAML=\\"${AUTH_YAML_CONTENT}\\"|g" var.ini
+                            sed -i "s|^MUST_GATHER_IMAGE=.*|MUST_GATHER_IMAGE=${MUST_GATHER_IMAGE}|g" var.ini
+                            
+                            # Print var.ini contents for verification
+                            echo "=========================================="
+                            echo "var.ini contents:"
+                            echo "=========================================="
+                            cat var.ini
+                            echo "=========================================="
                         '''
                     }
                     catch (err) {
@@ -208,7 +218,6 @@ pipeline {
                         throw err
                     }
                 }
-                odfRunSetupScript()
             }
         }
         stage('Run ODF deploy script') {
@@ -218,10 +227,17 @@ pipeline {
                         echo ""
                     }
                     try {
-                        sh '''
-                            cd ${WORKSPACE}/scripts/odf
-                            chmod +x run-odf-deploy.sh
-                            ./run-odf-deploy.sh
+                        sh '''#!/bin/bash
+                            set -o pipefail  # Ensure pipeline failures are caught
+                            
+                            # Create log directory if it doesn't exist
+                            mkdir -p ${WORKSPACE}/odf_tier_logs
+                            
+                            cd ${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}
+                            chmod +x deploy_upgrade_script.sh
+                            
+                            # Run script and redirect output to both console and log file
+                            ./deploy_upgrade_script.sh 2>&1 | tee ${WORKSPACE}/odf_tier_logs/odf-deploy-upgrade.log
                         '''
                     }
                     catch (err) {
@@ -232,12 +248,7 @@ pipeline {
                 }
             }
         }
-        stage('Capture output of multiple commands to verify before ODF upgrade') {
-            steps {
-                odfRunCommands("Before Upgrade")
-            }
-        }
-        stage('Run setup script again after odf deployment') {
+        stage('Run Tier 1 and Tier 4a') {
             steps {
                 script {
                     ansiColor('xterm') {
@@ -245,14 +256,18 @@ pipeline {
                     }
                     if ( ! params.ocsUpgradeVersion.isEmpty()) {
                         try {
-                            sh '''
-                               cd ${WORKSPACE}/scripts/odf
-                               chmod +x odf-setup-for-upgrade.sh
-                               ./odf-setup-for-upgrade.sh
+                            sh '''#!/bin/bash
+                            set -o pipefail  # Ensure pipeline failures are caught
+                    
+                            cd ${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}
+                            chmod +x run_tier1_tier4a.sh
+                            
+                            # Run script and redirect output to both console and log file
+                            ./run_tier1_tier4a.sh 2>&1 | tee ${WORKSPACE}/odf_tier_logs/run_tier1_tier4a.log
                                '''
                         }
                         catch (err) {
-                            echo 'Error ! Running setup script, odf-setup-for-upgrade.sh, post ODF deployment failed!'
+                            echo 'Error ! Running Tier1 and tier4a script failed!'
                             env.FAILED_STAGE=env.STAGE_NAME
                             throw err
                         }
@@ -260,68 +275,159 @@ pipeline {
                 }
             }
         }
-        stage('Upgrading ODF') {
-            steps {
-                script {
-                    ansiColor('xterm') {
-                        echo ""
-                    }
-                    if ( ! params.ocsUpgradeVersion.isEmpty()) {
-                        try {
-                            sh '''
-                               cd ${WORKSPACE}/scripts/odf
-                               chmod +x run-odf-upgrade.sh
-                               ./run-odf-upgrade.sh
-                               '''
-                            env.ODF_FULL_BUILD = readFile "${WORKSPACE}/odf-full-build.txt"
-
-                        }
-                        catch (err) {
-                            echo 'Error ! ODF Upgrade using upgrade-ocs-ci.sh failed!'
-                            env.FAILED_STAGE=env.STAGE_NAME
-                            throw err
-                        }
-                    }
-                }
-            }
-        }
-        stage('Capture output of multiple commands to verify after ODF upgrade') {
-            steps {
-               odfRunCommands("After Upgrade and before Tier ${TIER_TEST}")
-            }
-        }
-        stage('Run ODF tier tests') {
-            when {
-                expression { env.TIER_TEST != 'None' }
-            }
+        stage('Generate Test Summary') {
             steps {
                 script {
                     ansiColor('xterm') {
                         echo ""
                     }
                     try {
-                        sh '''
-                            cd ${WORKSPACE}/scripts/odf
-                            chmod +x run-tier-tests.sh
-                            chmod +x fix-config.sh
-                            [ ! -z "$UPGRADE_OCS_VERSION" ] && ./fix-config.sh ;
-                            ./run-tier-tests.sh
+                        sh '''#!/bin/bash
+                            set -o pipefail
+                            
+                            LOG_DIR="${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}/odf_tier_logs"
+                            SUMMARY_FILE="${WORKSPACE}/test-summary.txt"
+                            
+                            # Initialize summary file
+                            echo "========================================" > ${SUMMARY_FILE}
+                            echo "ODF Test Execution Summary" >> ${SUMMARY_FILE}
+                            echo "Generated: $(date)" >> ${SUMMARY_FILE}
+                            echo "========================================" >> ${SUMMARY_FILE}
+                            echo "" >> ${SUMMARY_FILE}
+                            
+                            # Add ODF before upgrade log
+                            if [ -f "${LOG_DIR}/odf-before-upgrade.log" ]; then
+                                echo "========================================" >> ${SUMMARY_FILE}
+                                echo "ODF Status Before Upgrade" >> ${SUMMARY_FILE}
+                                echo "========================================" >> ${SUMMARY_FILE}
+                                cat "${LOG_DIR}/odf-before-upgrade.log" >> ${SUMMARY_FILE}
+                                echo "" >> ${SUMMARY_FILE}
+                            else
+                                echo "ODF before upgrade log not found: ${LOG_DIR}/odf-before-upgrade.log" >> ${SUMMARY_FILE}
+                                echo "" >> ${SUMMARY_FILE}
+                            fi
+                            
+                            # Add ODF after upgrade log
+                            if [ -f "${LOG_DIR}/odf-after-upgrade.log" ]; then
+                                echo "========================================" >> ${SUMMARY_FILE}
+                                echo "ODF Status After Upgrade" >> ${SUMMARY_FILE}
+                                echo "========================================" >> ${SUMMARY_FILE}
+                                cat "${LOG_DIR}/odf-after-upgrade.log" >> ${SUMMARY_FILE}
+                                echo "" >> ${SUMMARY_FILE}
+                            else
+                                echo "ODF after upgrade log not found: ${LOG_DIR}/odf-after-upgrade.log" >> ${SUMMARY_FILE}
+                                echo "" >> ${SUMMARY_FILE}
+                            fi
+                            
+                            # Function to extract test summary
+                            extract_summary() {
+                                local tier=$1
+                                local log_file=$2
+                                local build_info_file=$3
+                                local crc_log_file=$4
+                                
+                                echo "========================================" >> ${SUMMARY_FILE}
+                                echo "Tier ${tier} Summary" >> ${SUMMARY_FILE}
+                                echo "========================================" >> ${SUMMARY_FILE}
+                                echo "" >> ${SUMMARY_FILE}
+                                
+                                if [ -f "${log_file}" ]; then
+                                    echo "Extracting summary from ${log_file}..." >> ${SUMMARY_FILE}
+                                    echo "" >> ${SUMMARY_FILE}
+                                    
+                                    # Extract short test summary info section
+                                    if grep -q "short test summary info" "${log_file}"; then
+                                        echo "--- Test Results ---" >> ${SUMMARY_FILE}
+                                        sed -n '/=* short test summary info =*/,/=.*=.*in.*=/p' "${log_file}" >> ${SUMMARY_FILE}
+                                        echo "" >> ${SUMMARY_FILE}
+                                    else
+                                        echo "No test summary found in log file." >> ${SUMMARY_FILE}
+                                        echo "" >> ${SUMMARY_FILE}
+                                    fi
+                                else
+                                    echo "Log file not found: ${log_file}" >> ${SUMMARY_FILE}
+                                    echo "" >> ${SUMMARY_FILE}
+                                fi
+                                
+                                # Print ODF build info
+                                if [ -f "${build_info_file}" ]; then
+                                    echo "========================================" >> ${SUMMARY_FILE}
+                                    echo "ODF Build Info (After Tier ${tier})" >> ${SUMMARY_FILE}
+                                    echo "========================================" >> ${SUMMARY_FILE}
+                                    cat "${build_info_file}" >> ${SUMMARY_FILE}
+                                    echo "" >> ${SUMMARY_FILE}
+                                else
+                                    echo "Build info file not found: ${build_info_file}" >> ${SUMMARY_FILE}
+                                    echo "" >> ${SUMMARY_FILE}
+                                fi
+                                
+                                # Print CRC log
+                                if [ -f "${crc_log_file}" ]; then
+                                    echo "========================================" >> ${SUMMARY_FILE}
+                                    echo "CRC Log (After Tier ${tier})" >> ${SUMMARY_FILE}
+                                    echo "========================================" >> ${SUMMARY_FILE}
+                                    cat "${crc_log_file}" >> ${SUMMARY_FILE}
+                                    echo "" >> ${SUMMARY_FILE}
+                                else
+                                    echo "CRC log file not found: ${crc_log_file}" >> ${SUMMARY_FILE}
+                                    echo "" >> ${SUMMARY_FILE}
+                                fi
+                            }
+                            
+                            # Extract Tier 1 summary
+                            extract_summary "1" \
+                                "${LOG_DIR}/tier1_${CURRENT_OCS_CHANNEL}.log" \
+                                "${LOG_DIR}/odf-build-info-after-tier1.log" \
+                                "${LOG_DIR}/crc_log_after_tier1.log"
+                            
+                            # Extract Tier 4a summary
+                            extract_summary "4a" \
+                                "${LOG_DIR}/tier4a_${CURRENT_OCS_CHANNEL}.log" \
+                                "${LOG_DIR}/odf-build-info-after-tier4a.log" \
+                                "${LOG_DIR}/crc_log_after_tier4a.log"
+                            
+                            # Add execution summary (rerun summary)
+                            EXECUTION_SUMMARY="${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}/execution_summary.txt"
+                            if [ -f "${EXECUTION_SUMMARY}" ]; then
+                                echo "========================================" >> ${SUMMARY_FILE}
+                                echo "Execution Summary (Rerun Summary)" >> ${SUMMARY_FILE}
+                                echo "========================================" >> ${SUMMARY_FILE}
+                                cat "${EXECUTION_SUMMARY}" >> ${SUMMARY_FILE}
+                                echo "" >> ${SUMMARY_FILE}
+                            else
+                                echo "Execution summary file not found: ${EXECUTION_SUMMARY}" >> ${SUMMARY_FILE}
+                                echo "" >> ${SUMMARY_FILE}
+                            fi
+                            
+                            echo "========================================" >> ${SUMMARY_FILE}
+                            echo "End of Summary" >> ${SUMMARY_FILE}
+                            echo "========================================" >> ${SUMMARY_FILE}
+                            
+                            # Create tar.gz archive of odf_tier_logs
+                            if [ -d "${LOG_DIR}" ]; then
+                                echo ""
+                                echo "Creating tar.gz archive of odf_tier_logs..."
+                                cd ${WORKSPACE}
+                                tar -czf odf_tier_logs.tar.gz -C ${ODF_UPGRADE_REPO_DIR}/odf_tier_logs
+                                echo "Archive created: ${WORKSPACE}/odf_tier_logs.tar.gz"
+                            else
+                                echo "Warning: Log directory not found: ${LOG_DIR}"
+                            fi
+                            
+                            # Display summary to console
+                            echo ""
+                            echo "=========================================="
+                            echo "Test Summary Generated"
+                            echo "=========================================="
+                            cat ${SUMMARY_FILE}
+                            echo "=========================================="
                         '''
                     }
                     catch (err) {
-                        echo 'Error ! Tier test script failed!'
-                        env.FAILED_STAGE=env.STAGE_NAME
-                        throw err
+                        echo 'Warning: Test summary generation encountered an issue, but continuing...'
+                        echo "Error details: ${err}"
                     }
-                 }
-             }
-        }
-        stage('Capture cluster information after the test') {
-            when {
-                expression { env.TIER_TEST != 'None' }
-            }
-            steps {
-                odfRunCommands("After Tier ${TIER_TEST}")
+                }
             }
         }
         stage('Waiting to timeout') {
@@ -350,7 +456,7 @@ pipeline {
     }
     post {
         always {
-            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
+            archiveAllArtifacts("odf_tier_logs.tar.gz","test-summary.txt" )
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()
