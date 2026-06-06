@@ -43,7 +43,6 @@ pipeline {
         //Env constants
         TERRAFORM_VER = "1.14.4"
         POWERVS = false
-        POWERVC_CLOUD = "scnlcicd"
         SCRIPT_DEPLOYMENT = false
         WAIT_FOR_DEBUG = "1"
 
@@ -83,11 +82,15 @@ pipeline {
                     def majorVersion = ocpVersionParts[0].toInteger()
                     def minorVersion = ocpVersionParts[1].toInteger()
                     
-                    // Use cicd-rhcos-9.8.latest.txt for OCP 4.22 and above
-                    if (majorVersion > 4 || (majorVersion == 4 && minorVersion >= 22)) {
-                        getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-9.8.latest.txt")
-                    } else {
+                    // For OCP 4.14-4.19: use version-specific RHCOS image
+                    // For OCP 4.20-4.21: use 4.19 RHCOS image
+                    // Default (4.22+): use cicd-rhcos-9.8.latest.txt
+                    if (majorVersion == 4 && minorVersion >= 14 && minorVersion <= 19) {
                         getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-${OCP_RELEASE}.latest.txt")
+                    } else if (majorVersion == 4 && minorVersion >= 20 && minorVersion <= 21) {
+                        getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-4.19.latest.txt")
+                    } else {
+                        getArtifacts("powervm/poll-powervc-images", "cicd-rhcos-9.8.latest.txt")
                     }
                     
                     getArtifacts("powervm/poll-powervc-images", "cicd-rhel-${REDHAT_RELEASE}.latest.txt")
@@ -122,11 +125,15 @@ pipeline {
                         def minorVersion = ocpVersionParts[1].toInteger()
                         def rhcosFileName = ""
                         
-                        // Use cicd-rhcos-9.8.latest.txt for OCP 4.22 and above
-                        if (majorVersion > 4 || (majorVersion == 4 && minorVersion >= 22)) {
-                            rhcosFileName = "cicd-rhcos-9.8.latest.txt"
-                        } else {
+                        // For OCP 4.14-4.19: use version-specific RHCOS image
+                        // For OCP 4.20-4.21: use 4.19 RHCOS image
+                        // Default (4.22+): use cicd-rhcos-9.8.latest.txt
+                        if (majorVersion == 4 && minorVersion >= 14 && minorVersion <= 19) {
                             rhcosFileName = "cicd-rhcos-${OCP_RELEASE}.latest.txt"
+                        } else if (majorVersion == 4 && minorVersion >= 20 && minorVersion <= 21) {
+                            rhcosFileName = "cicd-rhcos-4.19.latest.txt"
+                        } else {
+                            rhcosFileName = "cicd-rhcos-9.8.latest.txt"
                         }
                         
                         if (fileExists("deploy/artifactory/${rhcosFileName}")) {
@@ -287,7 +294,7 @@ pipeline {
                         sh '''#!/bin/bash
                             set -o pipefail
                             
-                            LOG_DIR="${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}/odf_tier_logs"
+                            LOG_DIR="${WORKSPACE}/odf_tier_logs"
                             SUMMARY_FILE="${WORKSPACE}/test-summary.txt"
                             
                             # Initialize summary file
