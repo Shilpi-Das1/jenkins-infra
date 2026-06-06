@@ -37,11 +37,13 @@ pipeline {
         UPGRADE_OCS_IMAGE = "${params.ocsUpgradeRegistryImage}"
         MUST_GATHER_IMAGE = "${params.mustGatherImage}"
         TIMEOUT = "${params.KeepFor}"
+        ODF_VERSION = "${UPGRADE_OCS_CHANNEL}"
+        OCP_RELEASE = "${OCP_VERSION}"
 
         //Env constants
-        HARDWARE_CHOSE = "P9"
         TERRAFORM_VER = "1.14.4"
         POWERVS = false
+        POWERVC_CLOUD = "scnlcicd"
         SCRIPT_DEPLOYMENT = false
         WAIT_FOR_DEBUG = "1"
 
