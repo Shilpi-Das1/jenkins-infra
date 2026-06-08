@@ -202,6 +202,11 @@ pipeline {
                             # Read AUTH_YAML content from auth.yaml file
                             AUTH_YAML_CONTENT=$(cat ${WORKSPACE}/deploy/data/auth.yaml | tr -d '\\n')
                             
+                            # Setting up kubeconfig for ODF
+                            scp -r -i ${WORKSPACE}/deploy/id_rsa -o 'StrictHostKeyChecking=no' root@${BASTION_IP}:/root/openstack-upi/auth/ ${WORKSPACE}/
+                            cp /usr/bin/oc ${WORKSPACE}/ocs-upi-kvm/src/ocs-ci/bin/
+                            mkdir ${WORKSPACE}/bin; cp /usr/bin/oc ${WORKSPACE}/bin/;
+
                             # Update var.ini with parameter values using sed
                             sed -i "s|^CURRENT_OCS_CHANNEL=.*|CURRENT_OCS_CHANNEL=${CURRENT_OCS_CHANNEL}|g" var.ini
                             sed -i "s|^UPGRADE_OCS_IMAGE=.*|UPGRADE_OCS_IMAGE=${UPGRADE_OCS_IMAGE}|g" var.ini
