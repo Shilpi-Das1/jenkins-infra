@@ -297,17 +297,40 @@ pipeline {
                             LOG_DIR="${WORKSPACE}/odf_tier_logs"
                             SUMMARY_FILE="${WORKSPACE}/test-summary.txt"
                             
+                            # Extract ODF build version from odf-after-upgrade.log
+                            ODF_BUILD_VERSION=""
+                            if [ -f "${LOG_DIR}/odf-after-upgrade.log" ]; then
+                                # Look for the pattern: #######  ODF build  #######
+                                # followed by the version number on the next line
+                                ODF_BUILD_VERSION=$(sed -n '/^#######  ODF build  #######$/{ n; p; }' "${LOG_DIR}/odf-after-upgrade.log" | head -1 | tr -d '[:space:]')
+                                
+                                if [ -n "${ODF_BUILD_VERSION}" ]; then
+                                    echo "Extracted ODF Build Version: ${ODF_BUILD_VERSION}"
+                                else
+                                    echo "Warning: Could not extract ODF build version from odf-after-upgrade.log"
+                                fi
+                            else
+                                echo "Warning: odf-after-upgrade.log not found, cannot extract build version"
+                            fi
+                            
                             # Initialize summary file
                             echo "========================================" > ${SUMMARY_FILE}
                             echo "ODF Test Execution Summary" >> ${SUMMARY_FILE}
                             echo "Generated: $(date)" >> ${SUMMARY_FILE}
+                            if [ -n "${ODF_BUILD_VERSION}" ]; then
+                                echo "ODF Build: ${ODF_BUILD_VERSION}" >> ${SUMMARY_FILE}
+                            fi
                             echo "========================================" >> ${SUMMARY_FILE}
                             echo "" >> ${SUMMARY_FILE}
                             
                             # Add ODF before upgrade log
                             if [ -f "${LOG_DIR}/odf-before-upgrade.log" ]; then
                                 echo "========================================" >> ${SUMMARY_FILE}
-                                echo "ODF Status Before Upgrade" >> ${SUMMARY_FILE}
+                                if [ -n "${ODF_BUILD_VERSION}" ]; then
+                                    echo "ODF Build: ${ODF_BUILD_VERSION} - Status Before Upgrade" >> ${SUMMARY_FILE}
+                                else
+                                    echo "ODF Status Before Upgrade" >> ${SUMMARY_FILE}
+                                fi
                                 echo "========================================" >> ${SUMMARY_FILE}
                                 cat "${LOG_DIR}/odf-before-upgrade.log" >> ${SUMMARY_FILE}
                                 echo "" >> ${SUMMARY_FILE}
@@ -319,7 +342,11 @@ pipeline {
                             # Add ODF after upgrade log
                             if [ -f "${LOG_DIR}/odf-after-upgrade.log" ]; then
                                 echo "========================================" >> ${SUMMARY_FILE}
-                                echo "ODF Status After Upgrade" >> ${SUMMARY_FILE}
+                                if [ -n "${ODF_BUILD_VERSION}" ]; then
+                                    echo "ODF Build: ${ODF_BUILD_VERSION} - Status After Upgrade" >> ${SUMMARY_FILE}
+                                else
+                                    echo "ODF Status After Upgrade" >> ${SUMMARY_FILE}
+                                fi
                                 echo "========================================" >> ${SUMMARY_FILE}
                                 cat "${LOG_DIR}/odf-after-upgrade.log" >> ${SUMMARY_FILE}
                                 echo "" >> ${SUMMARY_FILE}
@@ -336,7 +363,11 @@ pipeline {
                                 local crc_log_file=$4
                                 
                                 echo "========================================" >> ${SUMMARY_FILE}
-                                echo "Tier ${tier} Summary" >> ${SUMMARY_FILE}
+                                if [ -n "${ODF_BUILD_VERSION}" ]; then
+                                    echo "ODF Build: ${ODF_BUILD_VERSION} - Tier ${tier} Summary" >> ${SUMMARY_FILE}
+                                else
+                                    echo "Tier ${tier} Summary" >> ${SUMMARY_FILE}
+                                fi
                                 echo "========================================" >> ${SUMMARY_FILE}
                                 echo "" >> ${SUMMARY_FILE}
                                 
@@ -361,7 +392,11 @@ pipeline {
                                 # Print ODF build info
                                 if [ -f "${build_info_file}" ]; then
                                     echo "========================================" >> ${SUMMARY_FILE}
-                                    echo "ODF Build Info (After Tier ${tier})" >> ${SUMMARY_FILE}
+                                    if [ -n "${ODF_BUILD_VERSION}" ]; then
+                                        echo "ODF Build: ${ODF_BUILD_VERSION} - Build Info (After Tier ${tier})" >> ${SUMMARY_FILE}
+                                    else
+                                        echo "ODF Build Info (After Tier ${tier})" >> ${SUMMARY_FILE}
+                                    fi
                                     echo "========================================" >> ${SUMMARY_FILE}
                                     cat "${build_info_file}" >> ${SUMMARY_FILE}
                                     echo "" >> ${SUMMARY_FILE}
@@ -373,7 +408,11 @@ pipeline {
                                 # Print CRC log
                                 if [ -f "${crc_log_file}" ]; then
                                     echo "========================================" >> ${SUMMARY_FILE}
-                                    echo "CRC Log (After Tier ${tier})" >> ${SUMMARY_FILE}
+                                    if [ -n "${ODF_BUILD_VERSION}" ]; then
+                                        echo "ODF Build: ${ODF_BUILD_VERSION} - CRC Log (After Tier ${tier})" >> ${SUMMARY_FILE}
+                                    else
+                                        echo "CRC Log (After Tier ${tier})" >> ${SUMMARY_FILE}
+                                    fi
                                     echo "========================================" >> ${SUMMARY_FILE}
                                     cat "${crc_log_file}" >> ${SUMMARY_FILE}
                                     echo "" >> ${SUMMARY_FILE}
@@ -399,7 +438,11 @@ pipeline {
                             EXECUTION_SUMMARY="${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}/execution_summary.txt"
                             if [ -f "${EXECUTION_SUMMARY}" ]; then
                                 echo "========================================" >> ${SUMMARY_FILE}
-                                echo "Execution Summary (Rerun Summary)" >> ${SUMMARY_FILE}
+                                if [ -n "${ODF_BUILD_VERSION}" ]; then
+                                    echo "ODF Build: ${ODF_BUILD_VERSION} - Execution Summary (Rerun Summary)" >> ${SUMMARY_FILE}
+                                else
+                                    echo "Execution Summary (Rerun Summary)" >> ${SUMMARY_FILE}
+                                fi
                                 echo "========================================" >> ${SUMMARY_FILE}
                                 cat "${EXECUTION_SUMMARY}" >> ${SUMMARY_FILE}
                                 echo "" >> ${SUMMARY_FILE}
