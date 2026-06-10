@@ -217,13 +217,6 @@ pipeline {
                             sed -i "s|^FIPS_ENABLEMENT=.*|FIPS_ENABLEMENT=false|g" var.ini
                             sed -i "s|^AUTH_YAML=.*|AUTH_YAML=\\"${AUTH_YAML_CONTENT}\\"|g" var.ini
                             sed -i "s|^MUST_GATHER_IMAGE=.*|MUST_GATHER_IMAGE=${MUST_GATHER_IMAGE}|g" var.ini
-                            
-                            # Print var.ini contents for verification
-                            echo "=========================================="
-                            echo "var.ini contents:"
-                            echo "=========================================="
-                            cat var.ini
-                            echo "=========================================="
                         '''
                     }
                     catch (err) {
@@ -277,7 +270,7 @@ pipeline {
                             chmod +x run_tier1_tier4a.sh
                             
                             # Run script and redirect output to both console and log file
-                            ./run_tier1_tier4a.sh 2>&1 | tee ${WORKSPACE}/odf_tier_logs/run_tier1_tier4a.log
+                            ./run_tier1_tier4a.sh
                                '''
                         }
                         catch (err) {
