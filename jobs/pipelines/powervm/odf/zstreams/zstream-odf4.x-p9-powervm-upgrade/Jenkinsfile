@@ -433,7 +433,7 @@ pipeline {
                                 "${LOG_DIR}/crc_log_after_tier4a.log"
                             
                             # Add execution summary (rerun summary)
-                            EXECUTION_SUMMARY="${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}/execution_summary.txt"
+                            EXECUTION_SUMMARY="${WORKSPACE}/${LOG_DIR}/rerun-logs/execution_summary.txt"
                             if [ -f "${EXECUTION_SUMMARY}" ]; then
                                 echo "========================================" >> ${SUMMARY_FILE}
                                 if [ -n "${ODF_BUILD_VERSION}" ]; then
