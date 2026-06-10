@@ -422,13 +422,13 @@ pipeline {
                             
                             # Extract Tier 1 summary
                             extract_summary "1" \
-                                "${LOG_DIR}/tier1_${CURRENT_OCS_CHANNEL}.log" \
+                                "${LOG_DIR}/tier1_${UPGRADE_OCS_CHANNEL}.log" \
                                 "${LOG_DIR}/odf-build-info-after-tier1.log" \
                                 "${LOG_DIR}/crc_log_after_tier1.log"
                             
                             # Extract Tier 4a summary
                             extract_summary "4a" \
-                                "${LOG_DIR}/tier4a_${CURRENT_OCS_CHANNEL}.log" \
+                                "${LOG_DIR}/tier4a_${UPGRADE_OCS_CHANNEL}.log" \
                                 "${LOG_DIR}/odf-build-info-after-tier4a.log" \
                                 "${LOG_DIR}/crc_log_after_tier4a.log"
                             
@@ -452,17 +452,11 @@ pipeline {
                             echo "========================================" >> ${SUMMARY_FILE}
                             echo "End of Summary" >> ${SUMMARY_FILE}
                             echo "========================================" >> ${SUMMARY_FILE}
-                            
-                            # Create tar.gz archive of odf_tier_logs
-                            if [ -d "${LOG_DIR}" ]; then
-                                echo ""
-                                echo "Creating tar.gz archive of odf_tier_logs..."
-                                cd ${WORKSPACE}
-                                tar -czf odf_tier_logs.tar.gz -C ${ODF_UPGRADE_REPO_DIR}/odf_tier_logs
-                                echo "Archive created: ${WORKSPACE}/odf_tier_logs.tar.gz"
-                            else
-                                echo "Warning: Log directory not found: ${LOG_DIR}"
-                            fi
+                            echo ""
+                            echo "Creating tar.gz archive of odf_tier_logs..."
+                            cd ${WORKSPACE}
+                            tar -czf odf_tier_logs.tar.gz -C $LOG_DIR
+                            echo "Archive created: ${WORKSPACE}/odf_tier_logs.tar.gz"
                             
                             # Display summary to console
                             echo ""
