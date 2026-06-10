@@ -76,7 +76,7 @@ pipeline {
             steps {
                 script {
                     getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-build.txt" )
-                    
+                    env.RERUN_TIER_TEST = 1
                     // Determine RHCOS file based on OCP version
                     def ocpVersionParts = OCP_VERSION.tokenize('.')
                     def majorVersion = ocpVersionParts[0].toInteger()
