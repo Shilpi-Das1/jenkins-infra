@@ -75,6 +75,7 @@ pipeline {
         stage('pull artifact') {
             steps {
                 script {
+					currentBuild.description = "ODF Upgrade ${CURRENT_OCS_CHANNEL} -> ${UPGRADE_OCS_CHANNEL}"
                     getArtifacts("mirror-openshift-release", "latest-${OCP_RELEASE}-build.txt" )
                     env.RERUN_TIER_TEST = 1
                     // Determine RHCOS file based on OCP version
