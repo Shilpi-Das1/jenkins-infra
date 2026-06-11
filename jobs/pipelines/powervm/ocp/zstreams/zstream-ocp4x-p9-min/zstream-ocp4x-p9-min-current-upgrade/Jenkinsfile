@@ -248,6 +248,16 @@ pipeline {
                 setupKubeconfigOcp4()
             }
         }
+        stage('Capture OCP Console Screenshots') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
+            }
+            steps {
+                script {
+                    captureOcpConsoleScreenshots()
+                }
+            }
+        }
         stage('Setup and run ansible extra') {
             steps {
                archiveAllArtifacts("deploy/id_rsa")
@@ -258,6 +268,24 @@ pipeline {
         stage('Gather pprof and prometheus data') {
             steps {
                 gatherPrometheusData()
+            }
+        }
+        stage('Capture Cluster Health Summary') {
+            steps {
+                script {
+                    try {
+                        sh '''
+                            chmod +x ${WORKSPACE}/scripts/cluster-health-checkup.sh
+                            ${WORKSPACE}/scripts/cluster-health-checkup.sh 2>&1 \
+                                | tee ${WORKSPACE}/deploy/cluster-health.log
+                        '''
+                    } catch (err) {
+                        echo 'Cluster health summary capture failed!'
+                        env.FAILED_STAGE = env.STAGE_NAME
+                        throw err
+                    }
+                }
+                archiveAllArtifacts("deploy/cluster-health.log")
             }
         }
         stage('Waiting to timeout') {
