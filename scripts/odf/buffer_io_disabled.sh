@@ -21,7 +21,7 @@ echo "osd.2"
 oc -n $NAMESPACE rsh $TOOLS_POD sh -c "ceph config set osd.2  bluefs_buffered_io false"
 
 echo "===== Restarting OSD Deployments One-by-One ====="
-
+sleep 120
 DEPLOYMENTS=$(oc get deploy -n "$NAMESPACE" -o name | grep rook-ceph-osd)
 
 for deploy in $DEPLOYMENTS; do
@@ -34,7 +34,7 @@ for deploy in $DEPLOYMENTS; do
   echo "Waiting for $deploy_name to complete rollout..."
   oc rollout status -n "$NAMESPACE" deployment "$deploy_name" --timeout=300s
 done
-
+TOOLS_POD=$(oc get pods -n openshift-storage | grep rook-ceph-tools | awk '{print $1}')
 echo "===== Verifying bluefs_buffered_io Settings After Restart ====="
 echo "osd.0"
 oc -n $NAMESPACE rsh $TOOLS_POD sh -c "ceph config get osd.0  bluefs_buffered_io"
