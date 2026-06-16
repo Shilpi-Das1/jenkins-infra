@@ -196,6 +196,9 @@ pipeline {
                 script {
                     try {
                         sh '''#!/bin/bash
+						    cp /etc/resolv.conf.tmp /etc/resolv.conf.modified || true
+                            sed -i "1s/^/nameserver $BASTION_IP\\n/" /etc/resolv.conf.modified || true
+                            cp /etc/resolv.conf.modified /etc/resolv.conf || true
                             cd ${WORKSPACE}
                             git clone https://github.com/Shilpi-Das1/odf_upgrade_repo
                             cd ${ODF_UPGRADE_REPO_DIR}
