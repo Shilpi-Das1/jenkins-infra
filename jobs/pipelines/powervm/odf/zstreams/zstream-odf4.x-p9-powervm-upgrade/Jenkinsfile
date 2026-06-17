@@ -459,7 +459,7 @@ pipeline {
                             echo ""
                             echo "Creating tar.gz archive of odf_tier_logs..."
                             cd ${WORKSPACE}
-                            tar -czf odf_tier_logs.tar.gz -C $LOG_DIR
+                            tar -czf odf_tier_logs.tar.gz "$LOG_DIR"
                             echo "Archive created: ${WORKSPACE}/odf_tier_logs.tar.gz"
                             
                             # Display summary to console
