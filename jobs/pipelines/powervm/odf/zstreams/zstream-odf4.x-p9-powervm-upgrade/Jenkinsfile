@@ -315,7 +315,6 @@ pipeline {
             archiveAllArtifacts("odf_tier_logs-*.tar.gz", "test-summary-*.txt", "must-gather-*.tar.gz")
             cleanupOcp4Cluster()
             checkInfraError()
-            odfProcessTierTestResults()
             cleanWs()
         }
     }
