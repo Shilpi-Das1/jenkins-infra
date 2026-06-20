@@ -196,6 +196,8 @@ pipeline {
                 script {
                     try {
                         sh '''#!/bin/bash
+						    sudo apt update && apt install -y kmod
+							sudo ln -s /bin/lsmod /usr/sbin/lsmod
 						    cp /etc/resolv.conf.tmp /etc/resolv.conf.modified || true
                             sed -i "1s/^/nameserver $BASTION_IP\\n/" /etc/resolv.conf.modified || true
                             cp /etc/resolv.conf.modified /etc/resolv.conf || true
