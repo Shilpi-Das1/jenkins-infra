@@ -3,7 +3,7 @@
 pipeline {
     agent {
         docker {
-            image 'quay.io/pgottimu/inbound-agent:3355.v388858a_47b_33-21-jdk17'
+            image 'quay.io/powercloud/inbound-agent:3355.v388858a_47b_33-21-jdk17'
             args '-v /etc/resolv.conf:/etc/resolv.conf.tmp '
             label 'jump-vpc-x86_64'
         }
@@ -219,10 +219,33 @@ pipeline {
                 odfRunCommands("After Tier ${TIER_TEST}")
             }
         }
+        stage('Reun ODF tier tests') {
+            steps {
+                script {
+                    ansiColor('xterm') {
+                        echo ""
+                    }
+                    try {
+                        sh '''
+                            cd ${WORKSPACE}/ocs-upi-kvm/scripts/
+                            . ${WORKSPACE}/env_vars.sh
+                            bash rerun-ocs-ci.sh ${WORKSPACE}/tier${TIER_TEST}-summary.txt
+                            cp ${WORKSPACE}/rerun-logs/summary.txt ${WORKSPACE}/tier${TIER_TEST}-rerun-summary.txt
+                            tar -czf ${WORKSPACE}/rerun-logs.tar.gz ${WORKSPACE}/rerun-logs
+                        '''
+                    }
+                    catch (err) {
+                        echo 'Error ! Rerun Script failed!'
+                        env.FAILED_STAGE=env.STAGE_NAME
+                        throw err
+                    }
+                 }
+             }
+        }
     }
     post {
         always {
-            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt" , "check_crc.txt" , "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
+            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt", "tier${TIER_TEST}-rerun-summary.txt", "rerun-logs.tar.gz", "check_crc.txt", "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()

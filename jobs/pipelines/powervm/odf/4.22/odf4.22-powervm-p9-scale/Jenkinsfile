@@ -3,7 +3,7 @@
 pipeline {
     agent {
         docker {
-            image 'quay.io/powercloud/inbound-agent:3256.v88a_f6e922152-2-jdk17.1'
+            image 'quay.io/powercloud/inbound-agent:3355.v388858a_47b_33-21-jdk17'
             args '-v /etc/resolv.conf:/etc/resolv.conf.tmp '
             label 'jump-vpc-x86_64'
         }
@@ -223,6 +223,29 @@ pipeline {
             steps {
                 odfRunCommands("After scale test")
             }
+        }
+        stage('Reun ODF tier tests') {
+            steps {
+                script {
+                    ansiColor('xterm') {
+                        echo ""
+                    }
+                    try {
+                        sh '''
+                            cd ${WORKSPACE}/ocs-upi-kvm/scripts/
+                            . ${WORKSPACE}/env_vars.sh
+                            bash rerun-ocs-ci.sh ${WORKSPACE}/tier${TIER_TEST}-summary.txt
+                            cp ${WORKSPACE}/rerun-logs/summary.txt ${WORKSPACE}/tier${TIER_TEST}-rerun-summary.txt
+                            tar -czf ${WORKSPACE}/rerun-logs.tar.gz ${WORKSPACE}/rerun-logs
+                        '''
+                    }
+                    catch (err) {
+                        echo 'Error ! Rerun Script failed!'
+                        env.FAILED_STAGE=env.STAGE_NAME
+                        throw err
+                    }
+                 }
+             }
         }
     }
     post {
