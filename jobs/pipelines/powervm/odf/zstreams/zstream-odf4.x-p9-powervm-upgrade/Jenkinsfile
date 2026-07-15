@@ -223,6 +223,7 @@ pipeline {
                             sed -i "s|^FIPS_ENABLEMENT=.*|FIPS_ENABLEMENT=false|g" var.ini
                             sed -i "s|^AUTH_YAML=.*|AUTH_YAML=\\"${AUTH_YAML_CONTENT}\\"|g" var.ini
                             sed -i "s|^MUST_GATHER_IMAGE=.*|MUST_GATHER_IMAGE=${MUST_GATHER_IMAGE}|g" var.ini
+							echo "BASTION_IP=${BASTION_IP}" >> var.ini
                         '''
                     }
                     catch (err) {
