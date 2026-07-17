@@ -43,7 +43,6 @@ pipeline {
         TIER_TEST = "2"
         ENABLE_FIPS = false
         ENABLE_VAULT = false
-      
         CONFIG_TYPE = "odf"
 
         // kdump Configuration
@@ -178,9 +177,6 @@ pipeline {
                             ./run-odf-deploy.sh
                             chmod +x buffer_io_disabled.sh
                             ./buffer_io_disabled.sh
-                            oc patch storagecluster ocs-storagecluster -n openshift-storage --type json --patch '[{ "op": "replace", "path": "/spec/managedResources/cephCluster/nearFullRatio", "value": 0.95 }]'
-                            oc patch storagecluster ocs-storagecluster -n openshift-storage --type json --patch '[{ "op": "replace", "path": "/spec/managedResources/cephCluster/backfillFullRatio", "value": 0.95 }]'
-                            oc patch storagecluster ocs-storagecluster -n openshift-storage --type json --patch '[{ "op": "replace", "path": "/spec/managedResources/cephCluster/fullRatio", "value": 0.95 }]'
                         '''
                     }
                     catch (err) {
@@ -189,6 +185,11 @@ pipeline {
                         throw err
                     }
                 }
+            }
+        }
+        stage('Capture output of multiple commands to verify ODF deployment') {
+            steps {
+                odfRunCommands("Before  Tier ${TIER_TEST}")
             }
         }
         stage('Capture output of multiple commands to verify ODF deployment') {
@@ -232,7 +233,7 @@ pipeline {
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()
-            notifyBySlack(currentBuild.result, env.MESSAGE)
+        //    notifyBySlack(currentBuild.result, env.MESSAGE)
             cleanWs()
         }
     }
