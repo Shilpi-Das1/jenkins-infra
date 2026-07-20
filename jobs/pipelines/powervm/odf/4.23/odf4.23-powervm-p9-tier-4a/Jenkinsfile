@@ -3,7 +3,7 @@
 pipeline {
     agent {
         docker {
-            image 'quay.io/powercloud/inbound-agent:3355.v388858a_47b_33-21-jdk17'
+            image 'quay.io/rh-ee-shdas/inbound-agent-odf:3383.vc8881d4b_0e76-1-jdk17'
             args '-v /etc/resolv.conf:/etc/resolv.conf.tmp '
             label 'jump-vpc-x86_64'
         }
@@ -28,7 +28,7 @@ pipeline {
         SCRIPT_DEPLOYMENT = false
         WAIT_FOR_DEBUG = "1"
         REDHAT_RELEASE = "9.7"
-        OCP_RELEASE = "4.22"
+        OCP_RELEASE = "5.0"
         RHCOS_RELEASE="9.8"
 
         //Branch
@@ -39,7 +39,7 @@ pipeline {
 
         // ODF Variables
         PLATFORM = "powervm"
-        ODF_VERSION = "4.22"
+        ODF_VERSION = "4.23"
         TIER_TEST = "4a"
         ENABLE_FIPS = false
         ENABLE_VAULT = false
