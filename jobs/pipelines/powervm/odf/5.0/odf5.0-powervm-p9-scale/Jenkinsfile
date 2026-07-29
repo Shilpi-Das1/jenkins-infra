@@ -1,4 +1,4 @@
-@Library('shilpi-library') _
+@Library('jenkins-upstream-library') _
 
 pipeline {
     agent {
@@ -39,14 +39,15 @@ pipeline {
 
         // ODF Variables
         PLATFORM = "powervm"
-        ODF_VERSION = "4.23"
-        TIER_TEST = "1"
+        ODF_VERSION = "5.0"
+        TIER_TEST = "scale"
         ENABLE_FIPS = false
         ENABLE_VAULT = false
-        CONFIG_TYPE = "odf"
-
+        CONFIG_TYPE = "odf-scale"
         // kdump Configuration
         KDUMP_ENABLE="false"
+        NUM_OF_WORKERS = "4"
+        WORKER_VOLUME_SIZE = "1T"
 
         //QE only disable image policy for OCP 4.22+
         QE_ONLY_DISABLE_IMAGE_POLICY="true"
@@ -56,7 +57,7 @@ pipeline {
         stage('Setup Common Environment Variables') {
             steps {
                 setupCommonEnvironmentVariables()
-                setupClusterConfig("${CONFIG_TYPE}")
+                setupClusterConfig("${CONFIG_TYPE}","${NUM_OF_WORKERS}")
             }
         }
         stage('pull artifact') {
@@ -89,9 +90,9 @@ pipeline {
                             throw err
                         }
                         if (fileExists("deploy/artifactory/cicd-rhcos-${RHCOS_RELEASE}.latest.txt")) {
-                            env.RHCOS_IMAGE = readFile "deploy/artifactory/cicd-rhcos-${RHCOS_RELEASE}.latest.txt"
-                            env.RHCOS_IMAGE_NAME = env.RHCOS_IMAGE.split()[0].trim()
-                            env.RHCOS_IMAGE_ID = env.RHCOS_IMAGE.split()[1].trim()
+                             env.RHCOS_IMAGE = readFile "deploy/artifactory/cicd-rhcos-${RHCOS_RELEASE}.latest.txt"
+                             env.RHCOS_IMAGE_NAME = env.RHCOS_IMAGE.split()[0].trim()
+                             env.RHCOS_IMAGE_ID = env.RHCOS_IMAGE.split()[1].trim()
                         }
                         else {
                             echo "cicd-rhcos-${RHCOS_RELEASE}.latest.txt file does not exist. Please check poll-powervc-images job"
@@ -189,10 +190,10 @@ pipeline {
         }
         stage('Capture output of multiple commands to verify ODF deployment') {
             steps {
-                odfRunCommands("Before  Tier ${TIER_TEST}")
+                odfRunCommands("Before scale test")
             }
         }
-        stage('Run ODF tier tests') {
+        stage('Run ODF scale test') {
             steps {
                 script {
                     ansiColor('xterm') {
@@ -203,10 +204,15 @@ pipeline {
                             cd ${WORKSPACE}/scripts/odf
                             chmod +x run-tier-tests.sh
                             ./run-tier-tests.sh
+                            # Check if HTML reports exist and copy to results.html
+                            if ls ${WORKSPACE}/logs-ocs-ci/${ODF_VERSION}/*.html >/dev/null 2>&1; then
+                                cp ${WORKSPACE}/logs-ocs-ci/${ODF_VERSION}/*.html ${WORKSPACE}/logs-ocs-ci/${ODF_VERSION}/results.html
+                                echo "Converted HTML test report to results.html"
+                            fi
                         '''
                     }
                     catch (err) {
-                        echo 'Error ! Tier test script failed!'
+                        echo 'Error ! scale test script failed!'
                         env.FAILED_STAGE=env.STAGE_NAME
                         throw err
                     }
@@ -215,7 +221,7 @@ pipeline {
         }
         stage('Capture cluster information after the test') {
             steps {
-                odfRunCommands("After Tier ${TIER_TEST}")
+                odfRunCommands("After scale test")
             }
         }
         stage('Reun ODF tier tests') {
@@ -244,7 +250,7 @@ pipeline {
     }
     post {
         always {
-            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt", "tier${TIER_TEST}-rerun-summary.txt", "rerun-logs.tar.gz", "check_crc.txt", "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
+            archiveAllArtifacts("results.tar.gz","odf-must-gather.tar.gz", "check_crc.txt","scale-test-summary.txt", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()

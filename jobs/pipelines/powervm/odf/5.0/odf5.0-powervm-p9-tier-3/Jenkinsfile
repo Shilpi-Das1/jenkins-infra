@@ -3,7 +3,7 @@
 pipeline {
     agent {
         docker {
-            image 'quay.io/rh-ee-shdas/inbound-agent-odf:3383.vc8881d4b_0e76-1-jdk17'
+            image 'quay.io/powercloud/inbound-agent:3383.vc8881d4b_0e76-1-jdk17-v2'
             args '-v /etc/resolv.conf:/etc/resolv.conf.tmp '
             label 'jump-vpc-x86_64'
         }
@@ -39,10 +39,11 @@ pipeline {
 
         // ODF Variables
         PLATFORM = "powervm"
-        ODF_VERSION = "4.23"
-        TIER_TEST = "2"
+        ODF_VERSION = "5.0"
+        TIER_TEST = "3"
         ENABLE_FIPS = false
         ENABLE_VAULT = false
+      
         CONFIG_TYPE = "odf"
 
         // kdump Configuration
@@ -94,7 +95,7 @@ pipeline {
                             env.RHCOS_IMAGE_ID = env.RHCOS_IMAGE.split()[1].trim()
                         }
                         else {
-                            echo "cicd-rhcos-${RHCOS_RELEASE}.latest.txt file does not exist. Please check poll-powervc-images job"
+                             echo "cicd-rhcos-${RHCOS_RELEASE}.latest.txt file does not exist. Please check poll-powervc-images job"
                             throw err
                         }
                         if (fileExists("deploy/artifactory/cicd-rhel-${REDHAT_RELEASE}.latest.txt")) {
@@ -192,11 +193,6 @@ pipeline {
                 odfRunCommands("Before  Tier ${TIER_TEST}")
             }
         }
-        stage('Capture output of multiple commands to verify ODF deployment') {
-            steps {
-                odfRunCommands("Before Tier ${TIER_TEST}")
-            }
-        }
         stage('Run ODF tier tests') {
             steps {
                 script {
@@ -205,12 +201,9 @@ pipeline {
                     }
                     try {
                         sh '''
-                            cd ${WORKSPACE}/ocs-upi-kvm/scripts
-                            chmod +x run_individual_testcase.sh
-                            ./run_individual_testcase.sh -m tier2 -r object
-                            cp *_test_summary.log ${WORKSPACE}/
-                            cp *_final_test_report.txt ${WORKSPACE}/
-                            tar -cvzf ${WORKSPACE}/test_results_tier2_object.tar.gz *_test_results/
+                            cd ${WORKSPACE}/scripts/odf
+                            chmod +x run-tier-tests.sh
+                            ./run-tier-tests.sh
                         '''
                     }
                     catch (err) {
@@ -226,14 +219,37 @@ pipeline {
                 odfRunCommands("After Tier ${TIER_TEST}")
             }
         }
+        stage('Reun ODF tier tests') {
+            steps {
+                script {
+                    ansiColor('xterm') {
+                        echo ""
+                    }
+                    try {
+                        sh '''
+                            cd ${WORKSPACE}/ocs-upi-kvm/scripts/
+                            . ${WORKSPACE}/env_vars.sh
+                            bash rerun-ocs-ci.sh ${WORKSPACE}/tier${TIER_TEST}-summary.txt
+                            cp ${WORKSPACE}/rerun-logs/summary.txt ${WORKSPACE}/tier${TIER_TEST}-rerun-summary.txt
+                            tar -czf ${WORKSPACE}/rerun-logs.tar.gz ${WORKSPACE}/rerun-logs
+                        '''
+                    }
+                    catch (err) {
+                        echo 'Error ! Rerun Script failed!'
+                        env.FAILED_STAGE=env.STAGE_NAME
+                        throw err
+                    }
+                 }
+             }
+        }
     }
     post {
         always {
-            archiveAllArtifacts("results.tar.gz", "test_results*.tar.gz", "*_test_summary.log", "*_final_test_report.txt", "check_crc.txt", "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
+            archiveAllArtifacts("results.tar.gz", "tier${TIER_TEST}-summary.txt", "tier${TIER_TEST}-rerun-summary.txt", "rerun-logs.tar.gz", "check_crc.txt", "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
             cleanupOcp4Cluster()
             checkInfraError()
             odfProcessTierTestResults()
-        //    notifyBySlack(currentBuild.result, env.MESSAGE)
+            notifyBySlack(currentBuild.result, env.MESSAGE)
             cleanWs()
         }
     }

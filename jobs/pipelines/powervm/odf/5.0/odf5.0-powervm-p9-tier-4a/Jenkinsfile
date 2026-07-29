@@ -39,10 +39,11 @@ pipeline {
 
         // ODF Variables
         PLATFORM = "powervm"
-        ODF_VERSION = "4.23"
-        TIER_TEST = "1"
+        ODF_VERSION = "5.0"
+        TIER_TEST = "4a"
         ENABLE_FIPS = false
         ENABLE_VAULT = false
+
         CONFIG_TYPE = "odf"
 
         // kdump Configuration
