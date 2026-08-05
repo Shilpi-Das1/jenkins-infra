@@ -189,11 +189,6 @@ pipeline {
         }
         stage('Capture output of multiple commands to verify ODF deployment') {
             steps {
-                odfRunCommands("Before  Tier ${TIER_TEST}")
-            }
-        }
-        stage('Capture output of multiple commands to verify ODF deployment') {
-            steps {
                 odfRunCommands("Before Tier ${TIER_TEST}")
             }
         }
@@ -232,7 +227,6 @@ pipeline {
             archiveAllArtifacts("results.tar.gz", "test_results*.tar.gz", "*_test_summary.log", "*_final_test_report.txt", "check_crc.txt", "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
             cleanupOcp4Cluster()
             checkInfraError()
-            odfProcessTierTestResults()
         //    notifyBySlack(currentBuild.result, env.MESSAGE)
             cleanWs()
         }
