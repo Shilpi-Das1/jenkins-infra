@@ -189,11 +189,6 @@ pipeline {
         }
         stage('Capture output of multiple commands to verify ODF deployment') {
             steps {
-                odfRunCommands("Before  Tier ${TIER_TEST}")
-            }
-        }
-        stage('Capture output of multiple commands to verify ODF deployment') {
-            steps {
                 odfRunCommands("Before Tier ${TIER_TEST}")
             }
         }
