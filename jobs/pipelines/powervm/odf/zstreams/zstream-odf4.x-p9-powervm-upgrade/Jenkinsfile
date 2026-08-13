@@ -59,7 +59,7 @@ pipeline {
 
         // kdump Configuration
         KDUMP_ENABLE="false"
-        REDHAT_RELEASE = "9.7"
+        REDHAT_RELEASE = "9.8"
 
 
 
@@ -113,8 +113,8 @@ pipeline {
                         env.OCP_RELEASE_TAG = ""
                         if (fileExists("deploy/artifactory/latest-${OCP_RELEASE}-build.txt")) {
                             env.OPENSHIFT_IMAGE = readFile "deploy/artifactory/latest-${OCP_RELEASE}-build.txt"
-                            env.OPENSHIFT_IMAGE = env.OPENSHIFT_IMAGE.trim()
-                            env.OCP_RELEASE_TAG = env.OPENSHIFT_IMAGE.split(":")[1].trim()
+                            env.OPENSHIFT_IMAGE = ""
+                            env.OCP_RELEASE_TAG = ""
                         }
                         else {
                             echo "latest-${OCP_RELEASE}-build.txt file does not exist. Please check mirror-openshift-release job"
