@@ -27,7 +27,7 @@ pipeline {
         POWERVS = false
         SCRIPT_DEPLOYMENT = false
         WAIT_FOR_DEBUG = "1"
-        REDHAT_RELEASE = "9.7"
+        REDHAT_RELEASE = "9.8"
         OCP_RELEASE = "5.0"
         RHCOS_RELEASE="9.8"
 
