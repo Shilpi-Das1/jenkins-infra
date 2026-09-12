@@ -189,6 +189,27 @@ pipeline {
                 setupKubeconfigOcp4()
             }
         }
+        stage('Setup Swap on Bastion') {
+            steps {
+                script {
+                    try {
+                        sh '''#!/bin/bash
+                            ssh -q -i ${WORKSPACE}/deploy/id_rsa -o StrictHostKeyChecking=no root@${BASTION_IP} "
+                                sudo fallocate -l 8G /swapfile
+                                sudo chmod 600 /swapfile
+                                sudo mkswap /swapfile
+                                sudo swapon /swapfile
+                            "
+                        '''
+                    }
+                    catch (err) {
+                        echo 'Error ! Setup swap on bastion failed!'
+                        env.FAILED_STAGE=env.STAGE_NAME
+                        throw err
+                    }
+                }
+            }
+        }
         stage('Setup ODF') {
 
             steps {
