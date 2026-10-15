@@ -64,7 +64,7 @@ pipeline {
         always {
             archiveAllArtifacts("builds.raw.txt", "all-builds.txt","all-4.14-builds.txt", "all-4.15-builds.txt", "all-4.16-builds.txt", "all-4.17-builds.txt", "all-4.18-builds.txt", "all-4.19-builds.txt", "all-4.20-builds.txt", "all-4.21-builds.txt", "all-4.22-builds.txt", "all-4.23-builds.txt", "all-5.0-builds.txt",
                                   "latest-4.14-build.txt","latest-4.15-build.txt", "latest-4.16-build.txt", "latest-4.17-build.txt", "latest-4.18-build.txt", "latest-4.19-build.txt", "latest-4.20-build.txt", "latest-4.21-build.txt", "latest-4.22-build.txt", "latest-4.23-build.txt", "latest-5.0-build.txt",
-                                  "all-4.14-stable-builds.txt, "all-4.15-stable-builds.txt", "all-4.16-stable-builds.txt", "all-4.17-stable-builds.txt", "all-4.18-stable-builds.txt", "all-4.19-stable-builds.txt", "all-4.20-stable-builds.txt", "all-4.21-stable-builds.txt", "all-4.22-stable-builds.txt", "all-4.23-ec-builds.txt", "all-5.0-ec-builds.txt",
+                                  "all-4.14-stable-builds.txt", "all-4.15-stable-builds.txt", "all-4.16-stable-builds.txt", "all-4.17-stable-builds.txt", "all-4.18-stable-builds.txt", "all-4.19-stable-builds.txt", "all-4.20-stable-builds.txt", "all-4.21-stable-builds.txt", "all-4.22-stable-builds.txt", "all-4.23-ec-builds.txt", "all-5.0-ec-builds.txt",
                                   "latest-4.14-stable-build.txt","latest-4.15-stable-build.txt", "latest-4.16-stable-build.txt", "latest-4.17-stable-build.txt", "latest-4.18-stable-build.txt", "latest-4.19-stable-build.txt", "latest-4.20-stable-build.txt", "latest-4.21-stable-build.txt", "latest-4.22-stable-build.txt", "latest-4.23-ec-build.txt", "latest-5.0-ec-build.txt")
             cleanWs()
         }
