@@ -319,10 +319,13 @@ pipeline {
             steps {
                 script {
                     try {
+                        archiveAllArtifacts("odf_tier_logs-*.tar.gz", "test-summary-*.txt", "must-gather-*.tar.gz")
                         withCredentials([
                             string(credentialsId: 'JIRA_SERVER_ODF',    variable: 'JIRA_SERVER'),
                             string(credentialsId: 'JIRA_EMAIL_ODF',     variable: 'JIRA_EMAIL'),
-                            string(credentialsId: 'JIRA_API_TOKEN_ODF', variable: 'JIRA_API_TOKEN')
+                            string(credentialsId: 'JIRA_API_TOKEN_ODF', variable: 'JIRA_API_TOKEN'),
+                            file(credentialsId: 'SUBTASK_CONFIG_JSON_ODF',      variable: 'SUBTASK_CONFIG_FILE'),
+                            file(credentialsId: 'ODF_VERSION_MAPPING_JSON', variable: 'ODF_VERSION_MAPPING_FILE')
                         ]) {
                             sh '''#!/bin/bash
                                 # Install required Python packages (no sudo needed)
@@ -335,7 +338,9 @@ pipeline {
                                 if [ -n "${JIRA_DUE_DATE}" ]; then
                                     DUE_DATE_ARG="--due-date ${JIRA_DUE_DATE}"
                                 fi
-
+                                # Copy secret files into the repo directory so the script finds them
+                                cp "${SUBTASK_CONFIG_FILE}"      subtask_config.json
+                                cp "${ODF_VERSION_MAPPING_FILE}" odf_version_mapping.json
                                 # Prefer local workspace artifacts — no Jenkins API call needed.
                                 # Falls back to fetching from Jenkins API if local files are missing.
                                 LOCAL_SUMMARY=$(ls ${WORKSPACE}/odf_tier_logs/test-summary*.txt 2>/dev/null | head -1)
@@ -345,7 +350,7 @@ pipeline {
                                     python3 scripts/fetch_jenkins_artifacts.py \
                                         --build-number ${BUILD_NUMBER} \
                                         --local-artifacts ${WORKSPACE}/odf_tier_logs \
-                                        ${DUE_DATE_ARG}
+                                        ${DUE_DATE_ARG} |tee ${WORKSPACE}/odf_tier_logs/jira_upload.log
                                 else
                                     echo "Local artifacts not found — Skipping this stage"
                                 fi
@@ -366,7 +371,6 @@ pipeline {
                         echo ""
                     }
                     try {
-						    archiveAllArtifacts("odf_tier_logs-*.tar.gz", "test-summary-*.txt", "must-gather-*.tar.gz")
                             TIMEOUT_MIN = TIMEOUT.toInteger()
                             if ( TIMEOUT_MIN != 0 )
                             {
