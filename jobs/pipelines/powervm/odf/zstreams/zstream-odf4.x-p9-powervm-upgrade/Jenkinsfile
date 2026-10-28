@@ -12,9 +12,10 @@ pipeline {
         string(defaultValue: '', description: 'OCP version on which OCS/ODF will be deployed (e.g., 4.16)', name: 'ocpVersion')
         string(defaultValue: '', description: 'OCS version which you want to upgrade from (e.g., 4.15 - CURRENT_OCS_CHANNEL)', name: 'ocsVersion')
         string(defaultValue: '', description: 'OCS version to which you want to upgrade (e.g., 4.16 - UPGRADE_OCS_CHANNEL)', name: 'ocsUpgradeVersion')
-        string(defaultValue: '', description: 'rhceph-dev/ocs-registry image of upgraded ocs version (e.g., quay.io/rhceph-dev/ocs-registry:latest-stable-4.16 - UPGRADE_OCS_IMAGE)', name: 'ocsUpgradeRegistryImage')
-        string(defaultValue: '', description: 'MUST_GATHER_IMAGE (e.g., quay.io/rhceph-dev/ocs-must-gather:latest-4.19 or quay.io/rhceph-dev/odf4-odf-must-gather-rhel9:v4.21.0)', name: 'mustGatherImage')
-        string(defaultValue: '720', description: 'Enter time(in Minutes) to retain the cluster', name: 'KeepFor')
+        string(defaultValue: 'quay.io/rhceph-dev/ocs-registry:latest-stable-4.21', description: 'rhceph-dev/ocs-registry image of upgraded ocs version (e.g., quay.io/rhceph-dev/ocs-registry:latest-stable-4.16 - UPGRADE_OCS_IMAGE)', name: 'ocsUpgradeRegistryImage')
+        string(defaultValue: 'quay.io/rhceph-dev/odf4-odf-must-gather-rhel9:v4.21', description: 'MUST_GATHER_IMAGE (e.g.  quay.io/rhceph-dev/odf4-odf-must-gather-rhel9:v4.21)', name: 'mustGatherImage')
+        string(defaultValue: '5000', description: 'Enter time(in Minutes) to retain the cluster', name: 'KeepFor')
+        string(defaultValue: '17/Jun/26', description: 'Due date for JIRA subtask (format: d/MMM/yy, e.g., 17/Jun/26). Leave empty to skip JIRA upload.', name: 'jiraDueDate')
     }
      environment {
         //users and credentials. All must be defined in Jenkins Credentials
@@ -39,6 +40,7 @@ pipeline {
         TIMEOUT = "${params.KeepFor}"
         ODF_VERSION = "${UPGRADE_OCS_CHANNEL}"
         OCP_RELEASE = "${OCP_VERSION}"
+        JIRA_DUE_DATE = "${params.jiraDueDate}"
 
         //Env constants
         TERRAFORM_VER = "1.14.4"
@@ -309,6 +311,50 @@ pipeline {
                             env.FAILED_STAGE=env.STAGE_NAME
                             throw err
                         }
+                    }
+                }
+            }
+        }
+        stage('Upload Results to JIRA') {
+            steps {
+                script {
+                    try {
+                        withCredentials([
+                            string(credentialsId: 'JIRA_SERVER_ODF',    variable: 'JIRA_SERVER'),
+                            string(credentialsId: 'JIRA_EMAIL_ODF',     variable: 'JIRA_EMAIL'),
+                            string(credentialsId: 'JIRA_API_TOKEN_ODF', variable: 'JIRA_API_TOKEN')
+                        ]) {
+                            sh '''#!/bin/bash
+                                # Install required Python packages (no sudo needed)
+                                python3 -m pip install --user --quiet requests python-dotenv jira
+                                export PATH="$HOME/.local/bin:$PATH"
+
+                                cd ${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}
+
+                                DUE_DATE_ARG=""
+                                if [ -n "${JIRA_DUE_DATE}" ]; then
+                                    DUE_DATE_ARG="--due-date ${JIRA_DUE_DATE}"
+                                fi
+
+                                # Prefer local workspace artifacts — no Jenkins API call needed.
+                                # Falls back to fetching from Jenkins API if local files are missing.
+                                LOCAL_SUMMARY=$(ls ${WORKSPACE}/odf_tier_logs/test-summary*.txt 2>/dev/null | head -1)
+
+                                if [ -n "${LOCAL_SUMMARY}" ]; then
+                                    echo "Using local workspace artifacts from ${WORKSPACE}/odf_tier_logs"
+                                    python3 scripts/fetch_jenkins_artifacts.py \
+                                        --build-number ${BUILD_NUMBER} \
+                                        --local-artifacts ${WORKSPACE}/odf_tier_logs \
+                                        ${DUE_DATE_ARG}
+                                else
+                                    echo "Local artifacts not found — Skipping this stage"
+                                fi
+                            '''
+                        }
+                    }
+                    catch (err) {
+                        echo "⚠ Skipping JIRA upload: ${err.getMessage()}"
+                        // Non-fatal: pipeline continues to archiving and cluster cleanup
                     }
                 }
             }
