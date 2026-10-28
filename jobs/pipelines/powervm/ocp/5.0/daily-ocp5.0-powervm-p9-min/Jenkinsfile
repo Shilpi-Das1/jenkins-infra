@@ -33,7 +33,7 @@ pipeline {
         POWERVS = false
         SCRIPT_DEPLOYMENT = false
         WAIT_FOR_DEBUG = "1"
-        REDHAT_RELEASE = "9.7"
+        REDHAT_RELEASE = "9.8"
 
         //Branch
         OPENSHIFT_POWERVC_GIT_TF_DEPLOY_BRANCH="main"//The download branch
@@ -58,7 +58,7 @@ pipeline {
     stages {
         stage('Clone ansible extra') {
             steps {
-                cloneRepo("https://github.com/Poorna-Gottimukkula1/ocp4-playbooks-extras", "ocp4-playbooks-extras", "*/4.22-branch-e2e")
+                cloneRepo("https://github.com/ocp-power-automation/ocp4-playbooks-extras", "ocp4-playbooks-extras", "*/main")
             }
         }
         stage('Setup Common Environment Variables') {

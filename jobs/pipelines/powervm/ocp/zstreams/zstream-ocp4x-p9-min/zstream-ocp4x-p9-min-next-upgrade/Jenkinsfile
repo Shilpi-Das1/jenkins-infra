@@ -80,35 +80,35 @@ pipeline {
                     env.E2E_BRANCH = "release-${env.UPGRADE_RELEASE}"
 
                     if (env.OCP_RELEASE == "4.12") {
-                        env.REDHAT_RELEASE = "9.7"
+                        env.REDHAT_RELEASE = "9.8"
                         env.GOLANG_TARBALL = "https://golang.org/dl/go1.18.6.linux-ppc64le.tar.gz"
                     }
                     else if (env.OCP_RELEASE == "4.13"){
-                        env.REDHAT_RELEASE = "9.7"
+                        env.REDHAT_RELEASE = "9.8"
                         env.GOLANG_TARBALL = "https://golang.org/dl/go1.19.linux-ppc64le.tar.gz"
                     }
                     else if (env.OCP_RELEASE == "4.14") {
-                        env.REDHAT_RELEASE = "9.7"
+                        env.REDHAT_RELEASE = "9.8"
                         env.GOLANG_TARBALL = "https://golang.org/dl/go1.20.linux-ppc64le.tar.gz"
                     }
                     else if (env.OCP_RELEASE == "4.15") {
-                        env.REDHAT_RELEASE = "9.7"
+                        env.REDHAT_RELEASE = "9.8"
                         env.GOLANG_TARBALL = "https://golang.org/dl/go1.22.0.linux-ppc64le.tar.gz"
                     }
                     else if (env.OCP_RELEASE == "4.16"){
-                        env.REDHAT_RELEASE = "9.7"
+                        env.REDHAT_RELEASE = "9.8"
                         env.GOLANG_TARBALL = "https://golang.org/dl/go1.22.0.linux-ppc64le.tar.gz"
                     }
                     else if (env.OCP_RELEASE == "4.17") {
-                        env.REDHAT_RELEASE = "9.7"
+                        env.REDHAT_RELEASE = "9.8"
                         env.GOLANG_TARBALL = "https://golang.org/dl/go1.22.4.linux-ppc64le.tar.gz"
                     } 
                     else if (env.OCP_RELEASE == "4.18"){
-                        env.REDHAT_RELEASE = "9.7"
+                        env.REDHAT_RELEASE = "9.8"
                         env.GOLANG_TARBALL = "https://golang.org/dl/go1.22.4.linux-ppc64le.tar.gz"
                     }
                     else {
-                        env.REDHAT_RELEASE = "9.7"
+                        env.REDHAT_RELEASE = "9.8"
                         env.GOLANG_TARBALL = "https://golang.org/dl/go1.23.4.linux-ppc64le.tar.gz"
                     }
                     // Added a condition for RHCOS_RELEASE to be set to 4.19 for OCP 4.20/4.21
@@ -258,6 +258,16 @@ pipeline {
                 validateCoStatus()
             }
         }
+        stage('Capture OCP Console Screenshots') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
+            }
+            steps {
+                script {
+                    captureOcpConsoleScreenshots()
+                }
+            }
+        }
         stage('Setup and run ansible extra') {
             when { expression { return env.ENABLE_E2E_TEST == "true"; } }
             steps {
@@ -268,6 +278,24 @@ pipeline {
         stage('Gather pprof and prometheus data') {
             steps {
                 gatherPrometheusData()
+            }
+        }
+        stage('Capture Cluster Health Summary') {
+            steps {
+                script {
+                    try {
+                        sh '''
+                            chmod +x ${WORKSPACE}/scripts/cluster-health-checkup.sh
+                            ${WORKSPACE}/scripts/cluster-health-checkup.sh 2>&1 \
+                                | tee ${WORKSPACE}/deploy/cluster-health.log
+                        '''
+                    } catch (err) {
+                        echo 'Cluster health summary capture failed!'
+                        env.FAILED_STAGE = env.STAGE_NAME
+                        throw err
+                    }
+                }
+                archiveAllArtifacts("deploy/cluster-health.log")
             }
         }
         stage('Waiting to timeout') {
