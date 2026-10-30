@@ -20,6 +20,7 @@ pipeline {
         REDHAT_USERNAME = credentials('REDHAT_USERNAME')
         REDHAT_PASSWORD = credentials('REDHAT_PASSWORD')
         PULL_SECRET = credentials('PULL_SECRET')
+        LOCAL_STORAGE_IMAGE_URL = credentials('LOCAL_STORAGE_IMAGE_URL')
 
 
         //Env constants
@@ -146,6 +147,26 @@ pipeline {
         }
         stage('Run ODF Setup script') {
             steps {
+                script {
+                    try {
+                        def jsonText = sh(
+                            script: "curl -sf ${LOCAL_STORAGE_IMAGE_URL}/ocp/openshift-${ODF_VERSION}/local-storage-operator.json",
+                            returnStdout: true
+                        ).trim()
+                        def jsonData = readJSON text: jsonText
+                        def latestEntry = jsonData.find { it.outcome == "success" }
+                        if (!latestEntry) {
+                            error "No successful local-storage-operator image found"
+                        }
+                        env.OPTIONAL_OPERATORS_IMAGE = latestEntry.image_pullspec
+                        echo "OPTIONAL_OPERATORS_IMAGE=${env.OPTIONAL_OPERATORS_IMAGE}"
+                    }
+                    catch (err) {
+                        echo 'Error ! Failed to fetch local-storage-operator image!'
+                        env.FAILED_STAGE=env.STAGE_NAME
+                        throw err
+                    }
+                }
                 odfAuthYaml()
                 script {
                     try {
