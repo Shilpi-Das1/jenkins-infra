@@ -1,4 +1,5 @@
 @Library('shilpi-library') _
+import groovy.json.JsonSlurper
 
 pipeline {
     agent {
@@ -153,7 +154,7 @@ pipeline {
                             script: "curl -sf ${LOCAL_STORAGE_IMAGE_URL}/ocp/openshift-${ODF_VERSION}/local-storage-operator.json",
                             returnStdout: true
                         ).trim()
-                        def jsonData = readJSON text: jsonText
+                        def jsonData = new JsonSlurper().parseText(jsonText)
                         def latestEntry = jsonData.find { it.outcome == "success" }
                         if (!latestEntry) {
                             error "No successful local-storage-operator image found"
