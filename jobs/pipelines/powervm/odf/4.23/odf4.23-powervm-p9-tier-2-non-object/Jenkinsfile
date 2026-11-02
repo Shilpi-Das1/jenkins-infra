@@ -224,7 +224,7 @@ pipeline {
                         sh '''
                             cd ${WORKSPACE}/ocs-upi-kvm/scripts
                             chmod +x run_individual_testcase.sh
-                            ./run_individual_testcase.sh -m tier2 -r non-object
+                            ./run_individual_testcase.sh -m tier2 -r non-object|tee -a ${WORKSPACE}/non_object_tier2_test.log
                             cp *_test_summary.log ${WORKSPACE}/
                             cp *_final_test_report.txt ${WORKSPACE}/
                             tar -cvzf ${WORKSPACE}/test_results_tier2_non_object.tar.gz *_test_results/
@@ -246,7 +246,7 @@ pipeline {
     }
     post {
         always {
-            archiveAllArtifacts("results.tar.gz", "test_results*.tar.gz", "*_test_summary.log", "*_final_test_report.txt", "check_crc.txt", "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars")
+            archiveAllArtifacts("results.tar.gz", "test_results*.tar.gz", "*_test_summary.log", "*_final_test_report.txt", "check_crc.txt", "odf-must-gather.tar.gz", "odf-commands.txt", "odfbuild", "deploy/vars.tfvars","non_object_tier2_test.log")
             cleanupOcp4Cluster()
             checkInfraError()
         //    notifyBySlack(currentBuild.result, env.MESSAGE)
