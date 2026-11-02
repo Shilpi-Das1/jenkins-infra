@@ -329,7 +329,7 @@ pipeline {
                         ]) {
                             sh '''#!/bin/bash
                                 # Install required Python packages (no sudo needed)
-                                python3 -m pip install --user --quiet requests python-dotenv jira
+                                python3 -m pip install requests python-dotenv jira
                                 export PATH="$HOME/.local/bin:$PATH"
 
                                 cd ${WORKSPACE}/${ODF_UPGRADE_REPO_DIR}
