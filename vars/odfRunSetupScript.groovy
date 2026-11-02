@@ -27,15 +27,16 @@ def call(){
                [ ! -z "$UPGRADE_OCS_REGISTRY" ] && echo "export UPGRADE_OCS_REGISTRY=${UPGRADE_OCS_REGISTRY}" >> env_vars.sh
                [ ! -z "$OCS_REGISTRY_IMAGE" ] && echo "export OCS_REGISTRY_IMAGE=${OCS_REGISTRY_IMAGE}" >> env_vars.sh
                [ ! -z "$RERUN_TIER_TEST" ] && echo "export RERUN_TIER_TEST=${RERUN_TIER_TEST}" >> env_vars.sh
+               [ ! -z "$OPTIONAL_OPERATORS_IMAGE" ] && echo "export OPTIONAL_OPERATORS_IMAGE=${OPTIONAL_OPERATORS_IMAGE}" >> env_vars.sh
                
                if [ "${ODF_VERSION}" = "4.14" ] || [ "${ODF_VERSION}" = "4.15" ] || [ "${ODF_VERSION}" = "4.16" ] || \
                   [ "${ODF_VERSION}" = "4.17" ] || [ "${ODF_VERSION}" = "4.18" ] || [ "${ODF_VERSION}" = "4.19" ] || \
-                  [ "${ODF_VERSION}" = "4.20" ] || [ "${ODF_VERSION}" = "4.21" ]; then
+                  [ "${ODF_VERSION}" = "4.20" ] || [ "${ODF_VERSION}" = "4.21" ] || [ "${ODF_VERSION}" = "4.22" ]; then
                    git clone -b v"${ODF_VERSION}".0 https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                else
-                   git clone https://github.com/ocp-power-automation/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
+                   git clone https://github.com/shilpi-das1/ocs-upi-kvm.git ${WORKSPACE}/ocs-upi-kvm
                fi
-               cd ${WORKSPACE}/ocs-upi-kvm; git submodule update --init;
+               cd ${WORKSPACE}/ocs-upi-kvm; git checkout deploy-change ;git submodule update --init;
                scp -i ${WORKSPACE}/deploy/id_rsa -o 'StrictHostKeyChecking=no' root@${BASTION_IP}:/root/openstack-upi/metadata.json ${WORKSPACE}/
                chmod 0755 ${WORKSPACE}/env_vars.sh; . ${WORKSPACE}/env_vars.sh;
                [ "$TIER_TEST" = "2" ] && cd "${WORKSPACE}/ocs-upi-kvm/scripts/helper" && /bin/bash ./kustomize.sh > kustomize.log 2>&1 && /bin/bash ./rook-ceph-plugin.sh > rook-ceph-plugin.log 2>&1
